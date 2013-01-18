@@ -42,7 +42,6 @@ type digest struct {
 	compressor func(l, r *h256) *h256        //512 to 256 hash function
 }
 
-
 func NewTree() hash.Hash {
 	return NewTree2(ZeroPad32bytes, ht_sha256block)
 }

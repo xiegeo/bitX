@@ -1,4 +1,3 @@
-
 // Make sure when sha256padding and ht_sha256block are used,
 // hashes of data less than 56 bytes is the same as original sha256,
 // and hashes of longer data are not 
