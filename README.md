@@ -101,4 +101,4 @@ Application developers have an option to choose how acounts are founded by ether
 
 License
 =====
-2-Clause BSD, see [LICENSE](./LICENSE) file.
+2-Clause BSD, see LICENSE file.
