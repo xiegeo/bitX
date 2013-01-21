@@ -51,8 +51,8 @@ func TestFileOrder(t *testing.T) {
 	tree := NewTree().(*treeDigest)
 	t1 := *tree
 	t2 := *tree
-	file := NewFile2(&t1, &t2)
-	buf := make([]byte, 12345)
+	file := NewFile2(256, &t1, &t2)
+	buf := make([]byte, 1234)
 	tree.Write(buf)
 	tsum := tree.Sum(nil)
 	file.Write(buf)
