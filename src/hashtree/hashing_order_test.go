@@ -1,6 +1,7 @@
 package hashtree
 
 import (
+	"bytes"
 	"testing"
 )
 
@@ -10,8 +11,8 @@ import (
 // 0 - 1 - 2 -> -3
 // (0-1) - (2-3) -> 0
 // Whether the i'th node is + or - depends on the whether i has even or odd number of 1's in base 2
-func TestOrder(t *testing.T) {
-	c := NewTree2(NoPad32bytes, minus).(*digest)
+func TestTreeOrder(t *testing.T) {
+	c := NewTree2(NoPad32bytes, minus).(*treeDigest)
 	expect := int32(0)
 	for i := int32(0); i < 100; i++ {
 		n := i // n is the value of the i'th input, any function of i should pass test
@@ -43,4 +44,20 @@ func minus(left *h256, right *h256) *h256 {
 	r := right[0]
 	h := l - r
 	return &h256{uint32(h)}
+}
+
+// Test the order and structure of the file processor by making it duplicate tree processor
+func TestFileOrder(t *testing.T) {
+	tree := NewTree().(*treeDigest)
+	t1 := *tree
+	t2 := *tree
+	file := NewFile2(&t1, &t2)
+	buf := make([]byte, 12345)
+	tree.Write(buf)
+	tsum := tree.Sum(nil)
+	file.Write(buf)
+	fsum := file.Sum(nil)
+	if !bytes.Equal(fsum, tsum) {
+		t.Fatalf(" %x != %x", fsum, tsum)
+	}
 }

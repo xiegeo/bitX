@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-const blockSize = 32
+const treeNodeSize = 32
 
 type h256 [8]uint32 //the internal hash
 
@@ -31,9 +31,9 @@ func (h *h256) toBytes() []byte {
 	return bytes
 }
 
-// digest represents the partial evaluation of a hashtree.
-type digest struct {
-	x          [blockSize]byte               // unprocessed bytes
+// treeDigest represents the partial evaluation of a hashtree.
+type treeDigest struct {
+	x          [treeNodeSize]byte            // unprocessed bytes
 	xn         int                           //length of x
 	len        uint64                        // processed length
 	stack      [64]*h256                     // partial hashtree of more height then ever needed
@@ -47,28 +47,28 @@ func NewTree() hash.Hash {
 }
 
 func NewTree2(padder func(d io.Writer, len uint64), compressor func(l, r *h256) *h256) hash.Hash {
-	d := new(digest)
+	d := new(treeDigest)
 	d.Reset()
 	d.padder = padder
 	d.compressor = compressor
 	return d
 }
-func (d *digest) Size() int { return 32 }
+func (d *treeDigest) Size() int { return 32 }
 
-func (d *digest) BlockSize() int { return blockSize }
+func (d *treeDigest) BlockSize() int { return treeNodeSize }
 
-func (d *digest) Reset() {
+func (d *treeDigest) Reset() {
 	d.xn = 0
 	d.len = 0
 	d.stack = [64]*h256{nil}
 }
-func (d *digest) Write(p []byte) (startLength int, nil error) {
+func (d *treeDigest) Write(p []byte) (startLength int, nil error) {
 	startLength = len(p)
-	for len(p)+d.xn >= blockSize {
-		for i := 0; i < blockSize-d.xn; i++ {
+	for len(p)+d.xn >= treeNodeSize {
+		for i := 0; i < treeNodeSize-d.xn; i++ {
 			d.x[d.xn+i] = p[i]
 		}
-		p = p[blockSize-d.xn:]
+		p = p[treeNodeSize-d.xn:]
 		d.xn = 0
 		d.writeStack(fromBytes(d.x[:]), 0)
 	}
@@ -81,7 +81,7 @@ func (d *digest) Write(p []byte) (startLength int, nil error) {
 	d.len += uint64(startLength)
 	return
 }
-func (d *digest) writeStack(node *h256, level int) {
+func (d *treeDigest) writeStack(node *h256, level int) {
 	if d.sn == level {
 		d.stack[level] = node
 		d.sn++
@@ -94,7 +94,7 @@ func (d *digest) writeStack(node *h256, level int) {
 	}
 }
 
-func (d0 *digest) Sum(in []byte) []byte {
+func (d0 *treeDigest) Sum(in []byte) []byte {
 	// Make a copy of d0 so that caller can keep writing and summing.
 	d := *d0
 	d.padder(&d, d.len)
@@ -127,9 +127,9 @@ func ZeroPad32bytes(d io.Writer, len uint64) {
 	d.Write(make([]byte, padSize))
 }
 
-// use this when there should not need any padding, input is already in blocks
+// use this when there should not need any padding, input is already in blocks, or non.
 func NoPad32bytes(d io.Writer, len uint64) {
-	if len%32 != 0 {
-		panic(fmt.Sprintf("need padding of %v bytes for length of %v", len%32, len))
+	if len%32 != 0 || len == 0 {
+		panic(fmt.Sprintf("need padding of %v bytes for length of %v", 32-len%32, len))
 	}
 }

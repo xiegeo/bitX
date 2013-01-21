@@ -1,9 +1,3 @@
-// Make sure when sha256padding and ht_sha256block are used,
-// hashes of data less than 56 bytes is the same as original sha256,
-// and hashes of longer data are not 
-// (since tree hashes will hash data in a different order).
-//
-
 package hashtree
 
 import (
@@ -67,8 +61,11 @@ func TestGolden(t *testing.T) {
 	}
 }
 
-//Main test
-func TestComp(t *testing.T) {
+// Make sure when sha256padding and ht_sha256block are used for hashing of inner nodes,
+// hashes of data less than 56 bytes using tree hash alone is the same as original sha256,
+// and hashes of longer data are not equal
+// (since tree hashes will hash data in a different order).
+func TestTreeComp(t *testing.T) {
 	countLow := 0
 	countHigh := 0
 	for i := 0; i < len(golden); i++ {
@@ -87,12 +84,12 @@ func TestComp(t *testing.T) {
 			if len(g.in) < 56 {
 				countLow++
 				if s != g.out {
-					t.Fatalf("hash should be the same as sha256 for short inputs(%s) = %s want %s", g.in, s, g.out)
+					t.Fatalf("tree hash should be the same as sha256 for short inputs(%s) = %s want %s", g.in, s, g.out)
 				}
 			} else {
 				countHigh++
 				if s == g.out {
-					t.Fatalf("hash should NOT be the same as sha256 for long inputs(%s) = %s and %s", g.in, s, g.out)
+					t.Fatalf("tree hash should NOT be the same as sha256 for long inputs(%s) = %s and %s", g.in, s, g.out)
 				}
 			}
 			c.Reset()
@@ -107,6 +104,31 @@ func TestComp(t *testing.T) {
 		t.Fatalf("not enough long tests")
 	}
 
+}
+
+// Make sure file hashing on data less than 1 K bytes is same as original sha256,
+// and hashes of longer data are not [tested]
+func TestFileComp(t *testing.T) {
+	for i := 0; i < len(golden); i++ {
+		c := NewFile()
+		g := golden[i]
+		for j := 0; j < 3; j++ {
+			if j < 2 {
+				io.WriteString(c, g.in)
+			} else {
+				io.WriteString(c, g.in[0:len(g.in)/2])
+				c.Sum(nil)
+				io.WriteString(c, g.in[len(g.in)/2:])
+			}
+			s := fmt.Sprintf("%x", c.Sum(nil))
+
+			if s != g.out {
+				t.Fatalf("file hash should be the same as sha256 for <1k inputs(%s) = %s want %s", g.in, s, g.out)
+			}
+			c.Reset()
+		}
+
+	}
 }
 
 func sha256padding(d io.Writer, len uint64) {
