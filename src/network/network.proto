@@ -1,0 +1,59 @@
+package network;
+
+message ServerHello{
+	optional string code_name = 1;
+	optional string version_number = 2;
+	
+	optional int32 min_hash_height = 8 [default = 8];// The lowest inner hash list the server is willing to serve, must be 1 to 8
+	optional int32 max_hash_list_length = 9 [default = 32];
+	optional int32 max_data_block_size = 10 [default = 1024];
+	
+	optional string server_msg = 100;
+}
+
+
+message StaticId {
+	required uint64 length = 1;
+	required bytes hash = 2;
+}
+
+message InnerHashs{
+	required int32 height = 1;
+	required int32 from = 2;
+	optional int32 length = 3;//only used for ask
+	optional bytes hashes = 8;//only used for send
+}
+message FileData{
+	required uint64 from = 2;
+	optional int32 length = 3;//only used for ask (send bytes self encodes length)
+	optional int32 in_blocks = 4 [default = 1024];//only used for ask
+	optional bytes data = 8;//only used for send
+}
+
+message HaveFile{
+	optional bool complete = 1;
+	//todo: partial have lists
+}
+
+message File{
+	optional StaticId id = 1;
+	optional HaveFile have = 2;
+	repeated InnerHashs hash_ask = 4;
+	repeated InnerHashs hash_send = 5;
+	repeated FileData data_ask = 6;
+	repeated FileData data_send = 7;
+}
+
+message Packet{
+	optional int32 version = 1;
+	optional ServerHello hello = 2;
+	repeated File file = 3;
+	
+	repeated string bebug = 900;
+}
+
+message StaticLink{
+	optional StaticId id = 1;
+	optional string name = 2;
+	repeated string sources = 3; 
+}
