@@ -6,7 +6,7 @@ Next Goal: A simple demo of a usable applications, probably file backup and shar
 
 Needs:
 
-* A tree hash formate, will be expansive to change once deployed. Partially Coded, using sha256.
+* A tree hash format, will be expansive to change once deployed. Partially Coded, using sha256.
 
 * Networking:
    * Data serialization, using Protocal Buffers.
