@@ -62,7 +62,7 @@ Clients should control access by encrypting content before upload. Servers can a
 
 To free application development from complexities, most clients should use a daemon or library, which implements features of servers.
 
-Servers in consumer devices on a wireless network and server in data centers does not need the same behaviour. They would take different steps when relaying a download request. The consumer device can simply relay all requests to another server in a data center, geographically close, to do all the hard work. A list of fail over servers will provide redundancy. For hard work, see [Link Magic](#linkMagic).
+Servers in consumer devices on a wireless network and server in data centers does not need the same behaviour. They would take different steps when relaying a download request. The consumer device can simply relay all requests to another server in a data center, geographically close, to do all the hard work. A list of fail over servers will provide redundancy. For hard work, see [Link Magic](#link-magic).
 
 
 ####Real time updates of dynamic data:
@@ -70,7 +70,7 @@ Servers in consumer devices on a wireless network and server in data centers doe
 Server push, nothing new, right?
 
 
-Link Magic<a id="linkMagic"></a>
+Link Magic<a name="link-magic"></a>
 -------
 A link must uniquely identify content by hash+length or public key.
 But looking for global resources this way is expansive, short-cuts to locate data should be taken whenever possible.
@@ -101,4 +101,4 @@ Application developers have an option to choose how acounts are founded by ether
 
 License
 =====
-2-Clause BSD, see LICENSE file.
+2-Clause BSD, see [LICENSE](LICENSE) file.
