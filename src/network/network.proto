@@ -31,7 +31,8 @@ message FileData{
 }
 
 message HaveFile{
-	optional bool complete = 1;
+	optional bool have_request = 1;
+	optional bool complete = 2;
 	//todo: partial have lists
 }
 
@@ -47,7 +48,8 @@ message File{
 message Packet{
 	optional int32 version = 1;
 	optional ServerHello hello = 2;
-	repeated File file = 3;
+	optional bool hello_request = 3;
+	repeated File file = 4;
 	
 	repeated string bebug = 900;
 }
