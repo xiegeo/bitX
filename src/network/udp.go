@@ -40,7 +40,6 @@ func ListenUDP(ip string, port int) (*BitXConn, error) {
 	if errListen != nil {
 		return nil, errListen
 	}
-	log.Printf("Server started on:%s\n", pudp.LocalAddr())
 	return &BitXConn{pudp, false, nil, nil}, nil
 }
 
@@ -49,35 +48,39 @@ func (b *BitXConn) StartServerLoop() bool {
 		return false
 	}
 	b.serverOn = true
+	log.Printf("Server started on:%s\n", b.conn.LocalAddr())
 	send := make(chan BitXPacket, PacketBufferSize)
 	receive := make(chan BitXPacket, PacketBufferSize)
 	b.send = send
 	b.receive = receive
-	loop := func() {
+	go func() {
 		buf := make([]byte, 65507)
 		for b.serverOn {
 			n, addr, err := b.conn.ReadFromUDP(buf)
 			if err != nil {
-				log.Println("error:", err)
+				log.Println("error ReadFromUDP:", err)
 				continue
 			}
-			log.Println("from:", addr, "length", n, "data:", buf)
+			log.Println("from:", addr, "length", n)
 			p := new(Packet)
-			err = proto.Unmarshal(buf, p)
+			err = proto.Unmarshal(buf[:n], p)
 			if err != nil {
-				log.Println("error:", err)
+				log.Println("error Unmarshal:", err)
 				continue
 			}
 			receive <- BitXPacket{addr, p}
 		}
 		close(receive)
-	}
-	go loop()
+	}()
 	return true
 }
 func (b *BitXConn) Close() error {
 	b.serverOn = false
-	return b.conn.Close()
+	err := b.conn.Close()
+	if err == nil {
+		log.Printf("Server stopped on:%s\n", b.conn.LocalAddr())
+	}
+	return err
 }
 
 func (b *BitXConn) Send(p *Packet, addr *net.UDPAddr) (int, error) {
