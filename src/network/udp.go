@@ -19,10 +19,10 @@ func init() {
 }
 
 type BitXConn struct {
-	conn    *net.UDPConn
-	on      bool
-	send    chan<- BitXPacket
-	receive <-chan BitXPacket
+	conn *net.UDPConn
+	on   bool
+	//send    chan<- BitXPacket
+	Receive <-chan BitXPacket
 }
 
 type BitXPacket struct {
