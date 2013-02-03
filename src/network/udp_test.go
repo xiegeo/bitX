@@ -59,4 +59,6 @@ func TestSendHello(t *testing.T) {
 	case <-timeout:
 		t.Fatalf("timed out, not sent or received")
 	}
+	s1.Close()
+	s2.Close()
 }
