@@ -31,9 +31,9 @@ Idea
 
 To build a distributed data cache.
 
-* Static data is referenced by hash+length. Large data blocks uses tree hash to aid in multi-source download and error recovery. The tree structure is unique per length.
+* Static data is referenced by hash+length. Large data blocks uses tree hash to aid in multi-source download and error recovery. The tree structure determined by length.
 * Dynamic data is referenced by public key, data with a higher version number replaces older data. This update channel is protected by securing the private key.
-* Such that any data can be verified using the hashes and keys, allowing anyone to host.
+* There for, any data can be verified using the hashes and keys, allowing anyone to distribute data.
 
 Then different applications can be build using those services.
 
@@ -43,12 +43,12 @@ Basic use cases should be easy
 
 ####To upload data:
 
-1. Client makes data available for download, for a set of servers.
-2. Client sends *Retain* requests to servers, with the link to data.
-3. Servers download data from client, reusing connection established by *Retain*. Servers can also download from each other.
-4. Client can measure redundancy by number of copies on servers.
+1. Client, acking like a server, makes data available for download.
+2. Client sends *Retain* requests to servers, with the link to data, including hash+length and addresses of client and other retaining servers.
+3. Servers download data from client and each other, reuse use of connection established by client *Retain* request to work around NAT and firewall issues.
+4. Client can control redundancy by changing the distribution of retaining servers.
 
-If the set of servers is inclusive enough, then only #1 is needed. *Retain* only improves redundancy.
+The client is ready to publish a link for public consumbsion of data at step 1. Everything else is for redundancy.
 
 Servers have a *Retain* set. Servers should provide data in this set without external dependence. Servers may also provide other contents by cache or proxy without the same guarantees, allow freeing of non-retained content.
 
@@ -57,7 +57,7 @@ Clients should control access by encrypting content before upload. Servers can a
 
 ####To download data:
 
-1. Client request data by link from any server, magic.
+1. Client can request data by link from any server.
 2. Client can prefetch/offline data by *Retain* in a local server.
 
 To free application development from complexities, most clients should use a daemon or library, which implements features of servers.
