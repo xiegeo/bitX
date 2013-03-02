@@ -31,8 +31,8 @@ message FileData{
 }
 
 message HaveFile{
-	optional bool have_request = 1;
-	optional bool complete = 2;
+	optional bool have_request = 1;//asks if server have the file or not
+	optional bool complete = 2;//says if the server have the file
 	//todo: partial have lists
 }
 
@@ -45,11 +45,17 @@ message File{
 	repeated FileData data_send = 7;
 }
 
+message Retains{
+	repeated StaticLink add = 1;
+	repeated StaticId remove = 2;
+}
+
 message Packet{
 	//optional int32 version = 1; //reserved/not in use
 	optional ServerHello hello = 2;
 	optional bool hello_request = 3;
-	repeated File file = 4;
+	repeated Retains retains = 4;
+	repeated File file = 5;
 	
 	repeated string bebug = 900;
 }
