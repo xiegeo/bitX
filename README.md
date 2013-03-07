@@ -9,7 +9,7 @@ Needs:
 * A tree hash format, will be expensive to change once deployed. Partially Coded, using sha256.
 
 * Networking:
-	* Data serialization, using Protocal Buffers. See [network.proto](src\network\network.proto)
+	* Data serialization, using Protocal Buffers. See [network.proto](src/network/network.proto)
 	* Transport layer, UDP, messages are designed to be small and independent, Server is reactive to requests. Connections, user sessions, and transport layer securities will be considered later.
 
 * Collections:
