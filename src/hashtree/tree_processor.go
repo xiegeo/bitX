@@ -8,11 +8,11 @@ import (
 
 const treeNodeSize = 32
 
-type h256 [8]uint32 //the internal hash
+type H256 [8]uint32 //the internal hash
 
 //bytes must have a length of 32
-func fromBytes(bytes []byte) *h256 {
-	var h h256
+func fromBytes(bytes []byte) *H256 {
+	var h H256
 	for i := 0; i < 8; i++ {
 		j := i * 4
 		h[i] = uint32(bytes[j])<<24 | uint32(bytes[j+1])<<16 | uint32(bytes[j+2])<<8 | uint32(bytes[j+3])
@@ -20,7 +20,7 @@ func fromBytes(bytes []byte) *h256 {
 	return &h
 }
 
-func (h *h256) toBytes() []byte {
+func (h *H256) toBytes() []byte {
 	bytes := make([]byte, 32)
 	for i, s := range h {
 		bytes[i*4] = byte(s >> 24)
@@ -31,28 +31,42 @@ func (h *h256) toBytes() []byte {
 	return bytes
 }
 
+// A Hash that allow copy to produce hashes of diverging writes.
+type TreeHash interface {
+	hash.Hash
+	Copy() TreeHash
+}
+
 // treeDigest represents the partial evaluation of a hashtree.
 type treeDigest struct {
 	x          [treeNodeSize]byte            // unprocessed bytes
-	xn         int                           //length of x
+	xn         int                           // length of x
 	len        uint64                        // processed length
-	stack      [64]*h256                     // partial hashtree of more height then ever needed
+	stack      [64]*H256                     // partial hashtree of more height then ever needed
 	sn         int                           // top of stack, depth of tree
-	padder     func(d io.Writer, len uint64) //the padding function
-	compressor func(l, r *h256) *h256        //512 to 256 hash function
+	padder     func(d io.Writer, len uint64) // the padding function
+	compressor func(l, r *H256) *H256        // 512 to 256 hash function
 }
 
-func NewTree() hash.Hash {
+func NewTree() TreeHash {
 	return NewTree2(ZeroPad32bytes, ht_sha256block)
 }
 
-func NewTree2(padder func(d io.Writer, len uint64), compressor func(l, r *h256) *h256) hash.Hash {
+// Create a binary tree hash using padder and compressor.
+// Padder mush pad to intervals of 256 bits.
+// Compressor mush hash 2 H256s to 1.
+func NewTree2(padder func(d io.Writer, len uint64), compressor func(l, r *H256) *H256) TreeHash {
 	d := new(treeDigest)
 	d.Reset()
 	d.padder = padder
 	d.compressor = compressor
 	return d
 }
+func (d *treeDigest) Copy() TreeHash {
+	d0 := *d
+	return &d0
+}
+
 func (d *treeDigest) Size() int { return 32 }
 
 func (d *treeDigest) BlockSize() int { return treeNodeSize }
@@ -60,7 +74,7 @@ func (d *treeDigest) BlockSize() int { return treeNodeSize }
 func (d *treeDigest) Reset() {
 	d.xn = 0
 	d.len = 0
-	d.stack = [64]*h256{nil}
+	d.stack = [64]*H256{nil}
 }
 func (d *treeDigest) Write(p []byte) (startLength int, nil error) {
 	startLength = len(p)
@@ -81,7 +95,7 @@ func (d *treeDigest) Write(p []byte) (startLength int, nil error) {
 	d.len += uint64(startLength)
 	return
 }
-func (d *treeDigest) writeStack(node *h256, level int) {
+func (d *treeDigest) writeStack(node *H256, level int) {
 	if d.sn == level {
 		d.stack[level] = node
 		d.sn++
@@ -103,7 +117,7 @@ func (d0 *treeDigest) Sum(in []byte) []byte {
 		panic(fmt.Sprintf("d.xn = %d", d.xn))
 	}
 
-	var right *h256
+	var right *H256
 	i := 0
 	for ; right == nil; i++ {
 		right = d.stack[i]

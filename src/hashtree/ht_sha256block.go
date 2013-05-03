@@ -81,7 +81,7 @@ var _K = []uint32{
 	0xc67178f2,
 }
 
-func ht_sha256block(left *h256, right *h256) *h256 {
+func ht_sha256block(left, right *H256) *H256 {
 	var w [64]uint32
 	var h0, h1, h2, h3, h4, h5, h6, h7 uint32
 	h0, h1, h2, h3, h4, h5, h6, h7 = _Init0, _Init1, _Init2, _Init3, _Init4, _Init5, _Init6, _Init7
@@ -125,5 +125,5 @@ func ht_sha256block(left *h256, right *h256) *h256 {
 	h6 += g
 	h7 += h
 
-	return &h256{h0, h1, h2, h3, h4, h5, h6, h7}
+	return &H256{h0, h1, h2, h3, h4, h5, h6, h7}
 }

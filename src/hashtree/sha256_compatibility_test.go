@@ -107,7 +107,7 @@ func TestTreeComp(t *testing.T) {
 }
 
 // Make sure file hashing on data less than 1 K bytes is same as original sha256,
-// and hashes of longer data are not [tested]
+// and hashes of longer data are not [tested yet]
 func TestFileComp(t *testing.T) {
 	for i := 0; i < len(golden); i++ {
 		c := NewFile()
@@ -123,7 +123,7 @@ func TestFileComp(t *testing.T) {
 			s := fmt.Sprintf("%x", c.Sum(nil))
 
 			if s != g.out {
-				t.Fatalf("file hash should be the same as sha256 for <1k inputs(%s) = %s want %s", g.in, s, g.out)
+				t.Fatalf("(i=%d,j=%d) file hash should be the same as sha256 for <1k inputs(%s) = %s want %s", i, j, g.in, s, g.out)
 			}
 			c.Reset()
 		}

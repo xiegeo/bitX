@@ -16,7 +16,7 @@ func TestTreeOrder(t *testing.T) {
 	expect := int32(0)
 	for i := int32(0); i < 100; i++ {
 		n := i // n is the value of the i'th input, any function of i should pass test
-		data := h256{uint32(n)}
+		data := H256{uint32(n)}
 		c.Write(data.toBytes())
 		ans := int32(fromBytes(c.Sum(nil))[0])
 		if evenBits(uint32(i)) {
@@ -39,20 +39,21 @@ func evenBits(n uint32) bool {
 	return count%2 == 0
 }
 
-func minus(left *h256, right *h256) *h256 {
+func minus(left *H256, right *H256) *H256 {
 	l := left[0]
 	r := right[0]
 	h := l - r
-	return &h256{uint32(h)}
+	return &H256{uint32(h)}
 }
 
 // Test the order and structure of the file processor by making it duplicate tree processor
 func TestFileOrder(t *testing.T) {
+	fileSize := treeNodeSize*5 + 1
 	tree := NewTree().(*treeDigest)
 	t1 := *tree
 	t2 := *tree
-	file := NewFile2(256, &t1, &t2)
-	buf := make([]byte, 1234)
+	file := NewFile2(treeNodeSize, &t1, &t2)
+	buf := make([]byte, fileSize)
 	tree.Write(buf)
 	tsum := tree.Sum(nil)
 	file.Write(buf)
