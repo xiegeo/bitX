@@ -52,7 +52,7 @@ func TestSendHello(t *testing.T) {
 	timeout := make(chan bool)
 	go func() { time.Sleep(1 * time.Second); timeout <- true }()
 	select {
-	case ans := <-s2.receive:
+	case ans := <-s2.Receive:
 		if *ans.Packet.Hello.CodeName != *serverHello.CodeName {
 			t.Fatalf("got wrong packet", ans)
 		}

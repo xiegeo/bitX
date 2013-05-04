@@ -21,7 +21,6 @@ func init() {
 type BitXConn struct {
 	conn *net.UDPConn
 	on   bool
-	//send    chan<- BitXPacket
 	Receive <-chan BitXPacket
 }
 
@@ -40,19 +39,17 @@ func ListenUDP(ip string, port int) (*BitXConn, error) {
 	if errListen != nil {
 		return nil, errListen
 	}
-	return &BitXConn{pudp, false, nil, nil}, nil
+	return &BitXConn{conn:pudp, on:false}, nil
 }
 
 func (b *BitXConn) StartServerLoop() bool {
-	if b.on || b.send != nil || b.receive != nil {
+	if b.on || b.Receive != nil {
 		return false
 	}
 	b.on = true
 	log.Printf("Server started on:%s\n", b.conn.LocalAddr())
-	send := make(chan BitXPacket, PacketBufferSize)
 	receive := make(chan BitXPacket, PacketBufferSize)
-	b.send = send
-	b.receive = receive
+	b.Receive = receive
 	go func() {
 		buf := make([]byte, 65507)
 		for b.on {
