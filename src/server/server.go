@@ -3,6 +3,7 @@ package server
 import (
 	"../network"
 	logPkg "log"
+	"os"
 )
 
 var log *logPkg.Logger
@@ -13,29 +14,32 @@ func init() {
 
 type Server struct {
 	Setting Setting
-	Conn *network.BitXConn
+	Conn    *network.BitXConn
 }
 
-func (s *Server) consume(ps <-chan BitXPacket){
-	for p := range ps{
+func (s *Server) consume(ps <-chan network.BitXPacket) {
+	for p := range ps {
 		s.process(p)
 	}
 }
 
-func (s *Server) process(bp BitXPacket){
+func (s *Server) process(bp network.BitXPacket) {
 	addr := bp.Addr
 	p := bp.Packet
-	if p.ServerHello != nil{
-		log.Printf("got hello:%v from:%v", p.ServerHello, addr)
+	if p.Hello != nil {
+		log.Printf("got hello:%v from:%v", p.Hello, addr)
 	}
-	if p.GetHelloRequest {
+	if p.GetHelloRequest() {
 		log.Printf("req hello from:%v", addr)
-		s.Conn.Send(S.Setting.Hello,addr)
+		packet := &network.Packet{
+			Hello: &s.Setting.Hello,
+		}
+		s.Conn.Send(packet, addr)
 	}
-	if p.File != nil{
-		for _,f := range p.File{
-			
+	if p.File != nil {
+		for _, f := range p.File {
+
 		}
 	}
-	
+
 }
