@@ -20,16 +20,29 @@ func ImportLocalFile(d Database, location string) network.StaticId {
 	return id
 }
 
-type SimpleDatabase struct {
-	datafolder os.File
+type simpleDatabase struct {
+	datafolder *os.File
 }
 
-func (d *SimpleDatabase) ImportFromReader(r io.Reader) network.StaticId {
+func OpenSimpleDatabase(dirname string) Database {
+	os.MkdirAll(dirname, 0777)
+	dir, err := os.Open(dirname)
+	if err != nil {
+		panic(err)
+	}
+	d := &simpleDatabase{
+		datafolder: dir,
+	}
+
+	return d
+}
+
+func (d *simpleDatabase) ImportFromReader(r io.Reader) network.StaticId {
 	//TODO: save and return hash and length
 	return network.StaticId{}
 }
 
-func (d *SimpleDatabase) Get(id network.StaticId, from, length int64) ([]byte, error) {
+func (d *simpleDatabase) Get(id network.StaticId, from, length int64) ([]byte, error) {
 	//TODO: return saved
 	return make([]byte, length), nil
 }
