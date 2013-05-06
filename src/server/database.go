@@ -4,6 +4,7 @@ import (
 	"../network"
 	"bufio"
 	"io"
+	"io/ioutil"
 	"os"
 )
 
@@ -22,6 +23,7 @@ func ImportLocalFile(d Database, location string) network.StaticId {
 
 type simpleDatabase struct {
 	datafolder *os.File
+	dirname    string
 }
 
 func OpenSimpleDatabase(dirname string) Database {
@@ -32,14 +34,23 @@ func OpenSimpleDatabase(dirname string) Database {
 	}
 	d := &simpleDatabase{
 		datafolder: dir,
+		dirname:    dirname,
 	}
 
 	return d
 }
 
 func (d *simpleDatabase) ImportFromReader(r io.Reader) network.StaticId {
-	//TODO: save and return hash and length
-	return network.StaticId{}
+	f, err := ioutil.TempFile(d.dirname, "import-")
+	if err != nil {
+		panic(err)
+	}
+	len, err2 := io.Copy(f, r)
+	if err2 != nil {
+		panic(err2)
+	}
+	ulen := uint64(len)
+	return network.StaticId{Length:&ulen}
 }
 
 func (d *simpleDatabase) Get(id network.StaticId, from, length int64) ([]byte, error) {
