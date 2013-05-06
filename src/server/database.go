@@ -4,15 +4,14 @@ import (
 	"../hashtree"
 	"../network"
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
-	"errors"
 )
 
 var NOT_LOCAL = errors.New("file is not locally available")
-
 
 type Database interface {
 	ImportFromReader(r io.Reader) network.StaticId
@@ -63,7 +62,7 @@ func (d *simpleDatabase) ImportFromReader(r io.Reader) (id network.StaticId) {
 		Length: &len,
 	}
 	f.Close()
-	err = os.Rename(f.Name(), d.fileNameForId(id) )
+	err = os.Rename(f.Name(), d.fileNameForId(id))
 	if err != nil {
 		if os.IsExist(err) {
 			os.Remove(f.Name())
@@ -74,13 +73,13 @@ func (d *simpleDatabase) ImportFromReader(r io.Reader) (id network.StaticId) {
 	return
 }
 func (d *simpleDatabase) GetAt(b []byte, id network.StaticId, off int64) (int, error) {
-	f, err := os.Open(d.fileNameForId(id ))
+	f, err := os.Open(d.fileNameForId(id))
 	if err != nil {
 		return 0, NOT_LOCAL
 	}
 	return f.ReadAt(b, off)
 }
 
-func (d *simpleDatabase) fileNameForId(id network.StaticId) string{
+func (d *simpleDatabase) fileNameForId(id network.StaticId) string {
 	return fmt.Sprintf("%s/%s", d.datafolder.Name(), id.CompactId())
 }

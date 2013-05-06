@@ -15,11 +15,11 @@ func TestImport(t *testing.T) {
 	if id.GetLength() != testFileLength {
 		t.Fatalf("Length is %x, should be %x", id.GetLength(), testFileLength)
 	}
-	buf := make([]byte,1024)
+	buf := make([]byte, 1024)
 	n := 0
-	for i := int64(0); i < testFileLength; i +=int64(n) {
+	for i := int64(0); i < testFileLength; i += int64(n) {
 		n, _ = d.GetAt(buf, id, i)
-		for j := int64(0); j < int64(n); j ++{
+		for j := int64(0); j < int64(n); j++ {
 			if buf[j] != testFileG(i+j) {
 				t.Fatalf("at:%d, got:%x, expected:%x, for file:%s", i+j, buf[j], testFileG(i+j), id.CompactId())
 			}
