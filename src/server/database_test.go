@@ -18,7 +18,7 @@ func TestImport(t *testing.T) {
 	for i := int64(0); i < testFileLength; i++ {
 		got, _ := d.Get(id, i, 1)
 		if got[0] != testFileG(i) {
-			t.Fatalf("at i:%x, got:%x, expected:%x, for file:%s", i, got, []byte{testFileG(i)}, id.String())
+			t.Fatalf("at i:%x, got:%x, expected:%x, for file:%s", i, got, []byte{testFileG(i)}, id.CompactId())
 		}
 	}
 }
