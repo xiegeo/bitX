@@ -36,10 +36,10 @@ func (s *Server) process(bp network.BitXPacket) {
 		}
 		s.Conn.Send(packet, addr)
 	}
-/*	if p.File != nil {
-		for _, f := range p.File {
 
+	/*	if p.File != nil {
+			for _, f := range p.File {
+			}
 		}
-	}
-*/
+	*/
 }
