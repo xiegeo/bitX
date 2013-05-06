@@ -13,7 +13,7 @@ message ServerHello{
 
 
 message StaticId {
-	required uint64 length = 1;
+	required int64 length = 1;
 	required bytes hash = 2;
 }
 
@@ -24,7 +24,7 @@ message InnerHashs{
 	optional bytes hashes = 8;//only used for send
 }
 message FileData{
-	required uint64 from = 2;
+	required int64 from = 2;
 	optional int32 length = 3;//only used for ask (send bytes self encodes length)
 	optional int32 in_blocks = 4 [default = 1024];//only used for ask
 	optional bytes data = 8;//only used for send
