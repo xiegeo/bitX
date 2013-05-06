@@ -1,24 +1,30 @@
 package server
 
 import (
+	"../hashtree"
 	"../network"
 	"bufio"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	"errors"
 )
+
+var NOT_LOCAL = errors.New("file is not locally available")
+
 
 type Database interface {
 	ImportFromReader(r io.Reader) network.StaticId
-	Get(id network.StaticId, from, length int64) ([]byte, error)
+	GetAt(b []byte, id network.StaticId, off int64) (n int, err error)
 }
 
-func ImportLocalFile(d Database, location string) network.StaticId {
+func ImportLocalFile(d Database, location string) (id network.StaticId) {
 	f, _ := os.Open(location)
 	r := bufio.NewReader(f)
-	id := d.ImportFromReader(r)
+	id = d.ImportFromReader(r)
 	f.Close()
-	return id
+	return
 }
 
 type simpleDatabase struct {
@@ -40,7 +46,7 @@ func OpenSimpleDatabase(dirname string) Database {
 	return d
 }
 
-func (d *simpleDatabase) ImportFromReader(r io.Reader) network.StaticId {
+func (d *simpleDatabase) ImportFromReader(r io.Reader) (id network.StaticId) {
 	f, err := ioutil.TempFile(d.dirname, "import-")
 	if err != nil {
 		panic(err)
@@ -49,11 +55,32 @@ func (d *simpleDatabase) ImportFromReader(r io.Reader) network.StaticId {
 	if err2 != nil {
 		panic(err2)
 	}
-	ulen := uint64(len)
-	return network.StaticId{Length:&ulen}
+	hasher := hashtree.NewFile()
+	f.Seek(0, os.SEEK_SET)
+	io.Copy(hasher, f)
+	id = network.StaticId{
+		Hash:   hasher.Sum(nil),
+		Length: &len,
+	}
+	f.Close()
+	err = os.Rename(f.Name(), d.fileNameForId(id) )
+	if err != nil {
+		if os.IsExist(err) {
+			os.Remove(f.Name())
+		} else {
+			panic(err)
+		}
+	}
+	return
+}
+func (d *simpleDatabase) GetAt(b []byte, id network.StaticId, off int64) (int, error) {
+	f, err := os.Open(d.fileNameForId(id ))
+	if err != nil {
+		return 0, NOT_LOCAL
+	}
+	return f.ReadAt(b, off)
 }
 
-func (d *simpleDatabase) Get(id network.StaticId, from, length int64) ([]byte, error) {
-	//TODO: return saved
-	return make([]byte, length), nil
+func (d *simpleDatabase) fileNameForId(id network.StaticId) string{
+	return fmt.Sprintf("%s/%s", d.datafolder.Name(), id.CompactId())
 }
