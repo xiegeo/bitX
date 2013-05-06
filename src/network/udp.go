@@ -19,8 +19,8 @@ func init() {
 }
 
 type BitXConn struct {
-	conn *net.UDPConn
-	on   bool
+	conn    *net.UDPConn
+	on      bool
 	Receive <-chan BitXPacket
 }
 
@@ -39,7 +39,7 @@ func ListenUDP(ip string, port int) (*BitXConn, error) {
 	if errListen != nil {
 		return nil, errListen
 	}
-	return &BitXConn{conn:pudp, on:false}, nil
+	return &BitXConn{conn: pudp, on: false}, nil
 }
 
 func (b *BitXConn) StartServerLoop() bool {
