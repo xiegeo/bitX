@@ -36,7 +36,7 @@ type HashTree interface {
 	hash.Hash
 	Copy() HashTree
 	Levels(len int64) int
-	LevelWidth(level int, len int64) int
+	LevelWidth(len int64, level int) int
 	SetInnerHashLissener(func(level int, index int, hash *H256))
 }
 
@@ -85,7 +85,7 @@ func (d *treeDigest) Levels(len int64) int {
 	return math.Ilogb(float64(padded/treeNodeSize*2-1)) + 1
 }
 
-func (d *treeDigest) LevelWidth(level int, len int64) int {
+func (d *treeDigest) LevelWidth(len int64, level int) int {
 	return 0
 }
 
