@@ -87,6 +87,7 @@ func (d *simpleDatabase) GetAt(b []byte, id network.StaticId, off int64) (int, e
 	if err != nil {
 		return 0, NOT_LOCAL
 	}
+	defer f.Close()
 	return f.ReadAt(b, off)
 }
 
