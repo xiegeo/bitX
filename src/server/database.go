@@ -31,8 +31,8 @@ func ImportLocalFile(d Database, location string) (id network.StaticId) {
 }
 
 type simpleDatabase struct {
-	datafolder       *os.File
-	dirname          string
+	datafolder        *os.File
+	dirname           string
 	lowestInnerHashes int
 }
 
@@ -43,8 +43,8 @@ func OpenSimpleDatabase(dirname string, lowestInnerHashes int) Database {
 		panic(err)
 	}
 	d := &simpleDatabase{
-		datafolder:       dir,
-		dirname:          dirname,
+		datafolder:        dir,
+		dirname:           dirname,
 		lowestInnerHashes: lowestInnerHashes,
 	}
 
