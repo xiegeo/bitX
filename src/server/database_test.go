@@ -32,7 +32,7 @@ func TestImport(t *testing.T) {
 		}
 	}
 
-	inner, _ := d.GetInnerHashs(id, network.InnerHashs{
+	inner, _ := d.GetInnerHashes(id, network.InnerHashes{
 		Height: int32p(testInnerHashLevel),
 		From:   int32p(0),
 		Length: int32p(2),

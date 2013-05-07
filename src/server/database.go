@@ -16,10 +16,10 @@ var LEVEL_LOW = errors.New("the inner hash level is lower than cached")
 var LEVEL_HIGH = errors.New("the inner hash level is higher than root")
 
 type Database interface {
-	LowestInnerHashs() int
+	LowestInnerHashes() int
 	ImportFromReader(r io.Reader) network.StaticId
 	GetAt(b []byte, id network.StaticId, off int64) (n int, err error)
-	GetInnerHashs(id network.StaticId, req network.InnerHashs) (network.InnerHashs, error)
+	GetInnerHashes(id network.StaticId, req network.InnerHashes) (network.InnerHashes, error)
 }
 
 func ImportLocalFile(d Database, location string) (id network.StaticId) {
@@ -33,10 +33,10 @@ func ImportLocalFile(d Database, location string) (id network.StaticId) {
 type simpleDatabase struct {
 	datafolder       *os.File
 	dirname          string
-	lowestInnerHashs int
+	lowestInnerHashes int
 }
 
-func OpenSimpleDatabase(dirname string, lowestInnerHashs int) Database {
+func OpenSimpleDatabase(dirname string, lowestInnerHashes int) Database {
 	os.MkdirAll(dirname, 0777)
 	dir, err := os.Open(dirname)
 	if err != nil {
@@ -45,14 +45,14 @@ func OpenSimpleDatabase(dirname string, lowestInnerHashs int) Database {
 	d := &simpleDatabase{
 		datafolder:       dir,
 		dirname:          dirname,
-		lowestInnerHashs: lowestInnerHashs,
+		lowestInnerHashes: lowestInnerHashes,
 	}
 
 	return d
 }
 
-func (d *simpleDatabase) LowestInnerHashs() int {
-	return d.lowestInnerHashs
+func (d *simpleDatabase) LowestInnerHashes() int {
+	return d.lowestInnerHashes
 }
 
 func (d *simpleDatabase) ImportFromReader(r io.Reader) (id network.StaticId) {
@@ -90,7 +90,7 @@ func (d *simpleDatabase) GetAt(b []byte, id network.StaticId, off int64) (int, e
 	return f.ReadAt(b, off)
 }
 
-func (d *simpleDatabase) GetInnerHashs(id network.StaticId, req network.InnerHashs) (network.InnerHashs, error) {
+func (d *simpleDatabase) GetInnerHashes(id network.StaticId, req network.InnerHashes) (network.InnerHashes, error) {
 	//TODO: fill in innerhashes
 	return req, nil
 }

@@ -17,7 +17,7 @@ message StaticId {
 	required bytes hash = 2;
 }
 
-message InnerHashs{
+message InnerHashes{
 	required int32 height = 1;
 	required int32 from = 2;
 	optional int32 length = 3;//only used for ask
@@ -39,8 +39,8 @@ message HaveFile{
 message File{
 	optional StaticId id = 1;
 	optional HaveFile have = 2;
-	repeated InnerHashs hash_ask = 4;
-	repeated InnerHashs hash_send = 5;
+	repeated InnerHashes hash_ask = 4;
+	repeated InnerHashes hash_send = 5;
 	repeated FileData data_ask = 6;
 	repeated FileData data_send = 7;
 }
