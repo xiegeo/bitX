@@ -10,7 +10,7 @@ type fileDigest struct {
 	len           uint64    // processed length
 	leaf          hash.Hash // a hash, used for hashing leaf nodes
 	leafBlockSize int       // size of base block in bytes
-	tree          TreeHash  // the digest used for inner and root nodes
+	tree          HashTree  // the digest used for inner and root nodes
 }
 
 // Create the standard file tree hash using leaf blocks of 1kB and sha256,
@@ -21,7 +21,7 @@ func NewFile() hash.Hash {
 
 // Create any tree hash using leaf blocks of size and leaf hash,
 // and inner hash using tree hash, the tree stucture is internal to the tree hash.  
-func NewFile2(leafBlockSize int, leaf hash.Hash, tree TreeHash) hash.Hash {
+func NewFile2(leafBlockSize int, leaf hash.Hash, tree HashTree) hash.Hash {
 	d := new(fileDigest)
 	d.len = 0
 	d.leafBlockSize = leafBlockSize

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"hash"
 	"io"
+	"math"
 )
 
 const treeNodeSize = 32
@@ -31,10 +32,12 @@ func (h *H256) toBytes() []byte {
 	return bytes
 }
 
-// A Hash that allow copy to produce hashes of diverging writes.
-type TreeHash interface {
+type HashTree interface {
 	hash.Hash
-	Copy() TreeHash
+	Copy() HashTree
+	Levels(len int64) int
+	LevelWidth(level int, len int64) int
+	SetInnerHashLissener(func(level int, index int, hash *H256))
 }
 
 // treeDigest represents the partial evaluation of a hashtree.
@@ -48,23 +51,46 @@ type treeDigest struct {
 	compressor func(l, r *H256) *H256        // 512 to 256 hash function
 }
 
-func NewTree() TreeHash {
+func NewTree() HashTree {
 	return NewTree2(ZeroPad32bytes, ht_sha256block)
 }
 
 // Create a binary tree hash using padder and compressor.
 // Padder mush pad to intervals of 256 bits.
 // Compressor mush hash 2 H256s to 1.
-func NewTree2(padder func(d io.Writer, len uint64), compressor func(l, r *H256) *H256) TreeHash {
+func NewTree2(padder func(d io.Writer, len uint64), compressor func(l, r *H256) *H256) HashTree {
 	d := new(treeDigest)
 	d.Reset()
 	d.padder = padder
 	d.compressor = compressor
 	return d
 }
-func (d *treeDigest) Copy() TreeHash {
+func (d *treeDigest) Copy() HashTree {
 	d0 := *d
 	return &d0
+}
+
+type countingWriter int
+
+func (c *countingWriter) Write(p []byte) (length int, nil error) {
+	length = len(p)
+	*c += countingWriter(length)
+	return
+}
+
+func (d *treeDigest) Levels(len int64) int {
+	cw := countingWriter(0)
+	d.padder(&cw, uint64(len))
+	padded := len + int64(cw)
+	return math.Ilogb(float64(padded/treeNodeSize*2-1)) + 1
+}
+
+func (d *treeDigest) LevelWidth(level int, len int64) int {
+	return 0
+}
+
+func (d *treeDigest) SetInnerHashLissener(func(level int, index int, hash *H256)) {
+
 }
 
 func (d *treeDigest) Size() int { return 32 }
