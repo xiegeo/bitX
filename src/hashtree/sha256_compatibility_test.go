@@ -131,7 +131,7 @@ func TestFileComp(t *testing.T) {
 	}
 }
 
-func sha256padding(d io.Writer, len uint64) {
+func sha256padding(d io.Writer, len Bytes) {
 	// Add a 1 bit and 0 bits until 56 bytes mod 64.
 	var tmp [64]byte
 	tmp[0] = 0x80

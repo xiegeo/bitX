@@ -5,8 +5,8 @@ import (
 )
 
 type treeLevels struct {
-	len    uint64
-	levels int
+	len    Bytes
+	levels Level
 }
 
 var expectedTreeLevels = []treeLevels{
@@ -28,9 +28,9 @@ func TestTreeLevels(t *testing.T) {
 }
 
 type levelWidth struct {
-	len   uint64
-	level int
-	width int
+	len   Bytes
+	level Level
+	width Nodes
 }
 
 var expectedLevelWidth = []levelWidth{
@@ -67,7 +67,7 @@ var expectedInner = [][]int32{
 }
 
 func TestInnerHashListener(t *testing.T) {
-	listener := func(level int, index int, hash *H256) {
+	listener := func(level Level, index Nodes, hash *H256) {
 		//TODO: check hash
 	}
 	c := NewTree2(NoPad32bytes, minus).(*treeDigest)
