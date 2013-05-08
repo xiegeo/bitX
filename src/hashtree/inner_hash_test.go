@@ -34,19 +34,19 @@ type levelWidth struct {
 }
 
 var expectedLevelWidth = []levelWidth{
-	{0, 1, 1}, {1, 1, 1}, {treeNodeSize, 1, 1},
+	{0, 0, 1}, {1, 0, 1}, {treeNodeSize, 0, 1},
 
-	{treeNodeSize + 1, 1, 2}, {2 * treeNodeSize, 1, 2},
-	{treeNodeSize + 1, 2, 1}, {2 * treeNodeSize, 2, 1},
+	{treeNodeSize + 1, 0, 2}, {2 * treeNodeSize, 0, 2},
+	{treeNodeSize + 1, 1, 1}, {2 * treeNodeSize, 1, 1},
 
-	{2*treeNodeSize + 1, 1, 3}, {4 * treeNodeSize, 1, 4},
-	{2*treeNodeSize + 1, 2, 2}, {4 * treeNodeSize, 2, 2},
-	{2*treeNodeSize + 1, 3, 1}, {4 * treeNodeSize, 3, 1},
+	{2*treeNodeSize + 1, 0, 3}, {4 * treeNodeSize, 0, 4},
+	{2*treeNodeSize + 1, 1, 2}, {4 * treeNodeSize, 1, 2},
+	{2*treeNodeSize + 1, 2, 1}, {4 * treeNodeSize, 2, 1},
 
-	{5 * treeNodeSize, 1, 5}, {6 * treeNodeSize, 1, 6}, {7 * treeNodeSize, 1, 7}, {8 * treeNodeSize, 1, 8},
-	{5 * treeNodeSize, 2, 3}, {6 * treeNodeSize, 2, 3}, {7 * treeNodeSize, 2, 4}, {8 * treeNodeSize, 2, 4},
-	{5 * treeNodeSize, 3, 2}, {6 * treeNodeSize, 3, 2}, {7 * treeNodeSize, 3, 2}, {8 * treeNodeSize, 3, 2},
-	{5 * treeNodeSize, 4, 1}, {6 * treeNodeSize, 4, 1}, {7 * treeNodeSize, 4, 1}, {8 * treeNodeSize, 4, 1},
+	{5 * treeNodeSize, 0, 5}, {6 * treeNodeSize, 0, 6}, {7 * treeNodeSize, 0, 7}, {8 * treeNodeSize, 0, 8},
+	{5 * treeNodeSize, 1, 3}, {6 * treeNodeSize, 1, 3}, {7 * treeNodeSize, 1, 4}, {8 * treeNodeSize, 1, 4},
+	{5 * treeNodeSize, 2, 2}, {6 * treeNodeSize, 2, 2}, {7 * treeNodeSize, 2, 2}, {8 * treeNodeSize, 2, 2},
+	{5 * treeNodeSize, 3, 1}, {6 * treeNodeSize, 3, 1}, {7 * treeNodeSize, 3, 1}, {8 * treeNodeSize, 3, 1},
 }
 
 func TestLevelWidth(t *testing.T) {
@@ -54,7 +54,7 @@ func TestLevelWidth(t *testing.T) {
 	for i := 0; i < len(expectedLevelWidth); i++ {
 		e := expectedLevelWidth[i]
 		if h.LevelWidth(e.len, e.level) != e.width {
-			t.Fatalf("LevelWidth(%d,%d) = %d want %d", e.len, e.level, h.LevelWidth(e.len, e.level), e.level)
+			t.Fatalf("LevelWidth(%d,%d) = %d want %d", e.len, e.level, h.LevelWidth(e.len, e.level), e.width)
 		}
 	}
 }

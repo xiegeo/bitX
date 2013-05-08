@@ -93,7 +93,7 @@ func (d *treeDigest) Levels(len uint64) int {
 
 func (d *treeDigest) LevelWidth(len uint64, level int) int {
 	width := d.nodes(len)
-	for level > 1 {
+	for level > 0 {
 		width = (width + 1) / 2
 		level--
 	}
