@@ -3,18 +3,18 @@
 pushd "%~dp0"
 
 cd "..\src\network"
-echo network
+echo ### network ###
 go fmt
 protoc --go_out=. *.proto
 call :go_test
 
 cd "..\hashtree"
-echo hashtree
+echo ### hashtree ###
 go fmt
 call :go_test
 
 cd "..\server"
-echo server
+echo ### server ###
 go fmt
 call :go_test
 
