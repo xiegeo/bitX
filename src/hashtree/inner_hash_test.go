@@ -59,21 +59,37 @@ func TestLevelWidth(t *testing.T) {
 	}
 }
 
-var expectedInner = [][]int32{
-	{1, 1, 2, 3, 5, 8},
-	{0, -1, -3},
-	{1, -3},
-	{4},
-}
-
 func TestInnerHashListener(t *testing.T) {
-	listener := func(level Level, index Nodes, hash *H256) {
-		//TODO: check hash
+	inner := [][]int32{
+		{1, 1, 2, 3, 5, 8},
+		{0, -1, -3},
+		{1, -3},
+		{4},
+	}
+	listener := func(l Level, i Nodes, hash *H256) {
+		h := int32(hash[0])
+		if inner[l][i] != h {
+			if inner[l][i] == h+2000 {
+				t.Fatalf("Level:%d, Node:%d was repeated", l, i)
+			}
+			t.Fatalf("Level:%d, Node:%d, hash:%d, should be %d", l, i, h, inner[l][i])
+		} else {
+			inner[l][i] += 2000 //mark heard
+		}
 	}
 	c := NewTree2(NoPad32bytes, minus).(*treeDigest)
 	c.SetInnerHashListener(listener)
-	for _, n := range expectedInner[0] {
+	for _, n := range inner[0] {
 		data := H256{uint32(n)}
 		c.Write(data.toBytes())
+	}
+	c.Sum(nil)
+
+	for l, array := range inner {
+		for i, n := range array {
+			if n < 1000 {
+				t.Fatalf("Level:%d, Node:%d was not heard", l, i)
+			}
+		}
 	}
 }
