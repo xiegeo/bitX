@@ -58,3 +58,22 @@ func TestLevelWidth(t *testing.T) {
 		}
 	}
 }
+
+var expectedInner = [][]int32{
+	{1, 1, 2, 3, 5, 8},
+	{0, -1, -3},
+	{1, -3},
+	{4},
+}
+
+func TestInnerHashListener(t *testing.T) {
+	listener := func(level int, index int, hash *H256) {
+		//TODO: check hash
+	}
+	c := NewTree2(NoPad32bytes, minus).(*treeDigest)
+	c.SetInnerHashListener(listener)
+	for _, n := range expectedInner[0] {
+		data := H256{uint32(n)}
+		c.Write(data.toBytes())
+	}
+}

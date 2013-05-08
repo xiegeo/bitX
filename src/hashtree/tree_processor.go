@@ -37,18 +37,20 @@ type HashTree interface {
 	Copy() HashTree
 	Levels(len uint64) int
 	LevelWidth(len uint64, level int) int
-	SetInnerHashLissener(func(level int, index int, hash *H256))
+	SetInnerHashListener(l func(level int, index int, hash *H256))
 }
 
 // treeDigest represents the partial evaluation of a hashtree.
 type treeDigest struct {
-	x          [treeNodeSize]byte            // unprocessed bytes
-	xn         int                           // length of x
-	len        uint64                        // processed length
-	stack      [64]*H256                     // partial hashtree of more height then ever needed
-	sn         int                           // top of stack, depth of tree
-	padder     func(d io.Writer, len uint64) // the padding function
-	compressor func(l, r *H256) *H256        // 512 to 256 hash function
+	x                 [treeNodeSize]byte            // unprocessed bytes
+	xn                int                           // length of x
+	len               uint64                        // processed length
+	stack             [64]*H256                     // partial hashtree of more height then ever needed
+	sn                int                           // top of stack, depth of tree
+	padder            func(d io.Writer, len uint64) // the padding function
+	compressor        func(l, r *H256) *H256        // 512 to 256 hash function
+	innerHashListener func(level int, index int, hash *H256)
+	levelsWidth       [64]int
 }
 
 func NewTree() HashTree {
@@ -98,8 +100,8 @@ func (d *treeDigest) LevelWidth(len uint64, level int) int {
 	return width
 }
 
-func (d *treeDigest) SetInnerHashLissener(func(level int, index int, hash *H256)) {
-
+func (d *treeDigest) SetInnerHashListener(l func(level int, index int, hash *H256)) {
+	d.innerHashListener = l
 }
 
 func (d *treeDigest) Size() int { return 32 }
