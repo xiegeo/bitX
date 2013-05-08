@@ -73,9 +73,8 @@ func TestInnerHashListener(t *testing.T) {
 				t.Fatalf("Level:%d, Node:%d was repeated", l, i)
 			}
 			t.Fatalf("Level:%d, Node:%d, hash:%d, should be %d", l, i, h, inner[l][i])
-		} else {
-			inner[l][i] += 2000 //mark heard
 		}
+		inner[l][i] += 2000 //mark heard
 	}
 	c := NewTree2(NoPad32bytes, minus).(*treeDigest)
 	c.SetInnerHashListener(listener)

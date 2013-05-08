@@ -51,11 +51,11 @@ type treeDigest struct {
 	xn                int                          // length of x
 	len               Bytes                        // processed length
 	stack             [LEVEL_MAX]*H256             // partial hashtree of more height then ever needed
-	sn                int                          // top of stack, depth of tree
+	sn                Level                        // top of stack, depth of tree
 	padder            func(d io.Writer, len Bytes) // the padding function
 	compressor        func(l, r *H256) *H256       // 512 to 256 hash function
 	innerHashListener func(level Level, index Nodes, hash *H256)
-	levelsCounter     [LEVEL_MAX]int
+	innersCounter     [LEVEL_MAX]Nodes
 }
 
 func NewTree() HashTree {
@@ -134,7 +134,16 @@ func (d *treeDigest) Write(p []byte) (startLength int, nil error) {
 	d.len += Bytes(startLength)
 	return
 }
-func (d *treeDigest) writeStack(node *H256, level int) {
+
+func (d *treeDigest) listenInner(h *H256, l Level) {
+	if d.innerHashListener != nil {
+		d.innerHashListener(l, d.innersCounter[l], h)
+	}
+	d.innersCounter[l]++
+}
+
+func (d *treeDigest) writeStack(node *H256, level Level) {
+	d.listenInner(node, level)
 	if d.sn == level {
 		d.stack[level] = node
 		d.sn++
@@ -157,15 +166,17 @@ func (d0 *treeDigest) Sum(in []byte) []byte {
 	}
 
 	var right *H256
-	i := 0
+	i := Level(0)
 	for ; right == nil; i++ {
 		right = d.stack[i]
 	}
+	d.listenInner(right, i)
 	for ; i < d.sn; i++ {
 		left := d.stack[i]
 		if left != nil {
 			right = d.compressor(left, right)
 		}
+		d.listenInner(right, i+1)
 	}
 
 	return append(in, right.toBytes()...)
