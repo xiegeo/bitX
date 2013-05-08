@@ -35,8 +35,8 @@ func (h *H256) toBytes() []byte {
 type HashTree interface {
 	hash.Hash
 	Copy() HashTree
-	Levels(len int64) int
-	LevelWidth(len int64, level int) int
+	Levels(len uint64) int
+	LevelWidth(len uint64, level int) int
 	SetInnerHashLissener(func(level int, index int, hash *H256))
 }
 
@@ -70,7 +70,7 @@ func (d *treeDigest) Copy() HashTree {
 	return &d0
 }
 
-type countingWriter int
+type countingWriter uint64
 
 func (c *countingWriter) Write(p []byte) (length int, nil error) {
 	length = len(p)
@@ -78,15 +78,24 @@ func (c *countingWriter) Write(p []byte) (length int, nil error) {
 	return
 }
 
-func (d *treeDigest) Levels(len int64) int {
+func (d *treeDigest) nodes(len uint64) int {
 	cw := countingWriter(0)
-	d.padder(&cw, uint64(len))
-	padded := len + int64(cw)
-	return math.Ilogb(float64(padded/treeNodeSize*2-1)) + 1
+	d.padder(&cw, len)
+	padded := len + uint64(cw)
+	return int(padded / treeNodeSize)
 }
 
-func (d *treeDigest) LevelWidth(len int64, level int) int {
-	return 0
+func (d *treeDigest) Levels(len uint64) int {
+	return math.Ilogb(float64(d.nodes(len)*2-1)) + 1
+}
+
+func (d *treeDigest) LevelWidth(len uint64, level int) int {
+	width := d.nodes(len)
+	for level > 1 {
+		width = (width + 1) / 2
+		level--
+	}
+	return width
 }
 
 func (d *treeDigest) SetInnerHashLissener(func(level int, index int, hash *H256)) {

@@ -5,7 +5,7 @@ import (
 )
 
 type treeLevels struct {
-	len    int64
+	len    uint64
 	levels int
 }
 
@@ -28,7 +28,7 @@ func TestTreeLevels(t *testing.T) {
 }
 
 type levelWidth struct {
-	len   int64
+	len   uint64
 	level int
 	width int
 }
