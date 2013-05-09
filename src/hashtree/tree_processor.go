@@ -13,6 +13,9 @@ const LEVEL_MAX = 64
 type H256 [8]uint32 //the internal hash
 
 //bytes must have a length of 32
+func FromBytes(bytes []byte) *H256 {
+	return fromBytes(bytes)
+}
 func fromBytes(bytes []byte) *H256 {
 	var h H256
 	for i := 0; i < 8; i++ {
@@ -21,7 +24,9 @@ func fromBytes(bytes []byte) *H256 {
 	}
 	return &h
 }
-
+func (h *H256) ToBytes() []byte {
+	return h.toBytes()
+}
 func (h *H256) toBytes() []byte {
 	bytes := make([]byte, 32)
 	for i, s := range h {
@@ -177,7 +182,9 @@ func (d0 *treeDigest) Sum(in []byte) []byte {
 	for ; right == nil; i++ {
 		right = d.stack[i]
 	}
-	d.listenInner(right, i)
+	if i < d.sn {
+		d.listenInner(right, i)
+	}
 	for ; i < d.sn; i++ {
 		left := d.stack[i]
 		if left != nil {

@@ -63,13 +63,29 @@ func TestLevelWidth(t *testing.T) {
 }
 
 func TestInnerHashListener(t *testing.T) {
-	inner := [][]int32{
+	testInnerHashListener([][]int32{
+		{0},
+	}, t)
+	testInnerHashListener([][]int32{
+		{0, 1},
+		{-1},
+	}, t)
+	testInnerHashListener([][]int32{
 		{1, 1, 2, 3, 5, 8},
 		{0, -1, -3},
 		{1, -3},
 		{4},
-	}
+	}, t)
+}
+func testInnerHashListener(inner [][]int32, t *testing.T) {
+	t.Log(inner)
 	listener := func(l Level, i Nodes, hash *H256) {
+		t.Log(l, i, hash)
+		defer func() {
+			if r := recover(); r != nil {
+				t.Fatalf("error:%s, at Level:%d, Node:%d ", r, l, i)
+			}
+		}()
 		h := int32(hash[0])
 		if inner[l][i] != h {
 			if inner[l][i] == h+2000 {
