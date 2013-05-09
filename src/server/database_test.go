@@ -5,65 +5,85 @@ import (
 	"../network"
 	"bytes"
 	"io"
+	"os"
 	"testing"
 )
 
 const (
-	testFileLength     = 1234
-	testInnerHashLevel = 1
+	testDatabase = ".testDatabase"
+	testLevelLow = 0
 )
 
-func TestImport(t *testing.T) {
-	d := OpenSimpleDatabase(".testDatabase", testInnerHashLevel)
+func TestFileIO(t *testing.T) {
+	err := os.RemoveAll(testDatabase)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testFileSize(0, t)
+	testFileSize(1, t)
+	testFileSize(1024, t)
+	testFileSize(1025, t)
+	testFileSize(2345, t)
+	testFileSize(12345, t)
+}
 
-	id := d.ImportFromReader(&testFile{length: testFileLength})
-	if id.GetLength() != testFileLength {
-		t.Fatalf("Length is %x, should be %x", id.GetLength(), testFileLength)
+func testFileSize(len hashtree.Bytes, t *testing.T) {
+	t.Log("testing size:", len)
+	d := OpenSimpleDatabase(testDatabase, testLevelLow)
+
+	id := d.ImportFromReader(&testFile{length: len})
+	if hashtree.Bytes(id.GetLength()) != len {
+		t.Fatalf("Length is %x, should be %x", id.GetLength(), len)
 	}
 
 	buf := make([]byte, 1024)
 	n := 0
-	for i := int64(0); i < testFileLength; i += int64(n) {
-		n, _ = d.GetAt(buf, id, i)
-		for j := int64(0); j < int64(n); j++ {
+	for i := 0; i < int(len); i += n {
+		n, _ = d.GetAt(buf, id, int64(i))
+		for j := 0; j < n; j++ {
 			if buf[j] != testFileG(i+j) {
 				t.Fatalf("at:%d, got:%x, expected:%x, for file:%s", i+j, buf[j], testFileG(i+j), id.CompactId())
 			}
 		}
 	}
 
-	inner, _ := d.GetInnerHashes(id, network.InnerHashes{
-		Height: int32p(testInnerHashLevel),
-		From:   int32p(0),
-		Length: int32p(2),
-	})
-	list := inner.GetHashes()
 	hash := hashtree.NewTree()
-	hash.Write(list)
-	listSum := hash.Sum(nil)
-	if !bytes.Equal(listSum, id.Hash) {
-		t.Fatalf("inner hashes:%x, sums to:%x, expected:%x", list, listSum, id.Hash)
+	leafs := hashtree.Nodes((len + hashtree.FILE_BLOCK_SIZE - 1) / hashtree.FILE_BLOCK_SIZE)
+	Levels := hash.Levels(leafs)
+	for i := hashtree.Level(testLevelLow); i < Levels; i++ {
+		inner, _ := d.GetInnerHashes(id, network.InnerHashes{
+			Height: int32p(testLevelLow),
+			From:   int32p(0),
+			Length: int32p(int(hash.LevelWidth(leafs, i))),
+		})
+		list := inner.GetHashes()
+		hash.Write(list)
+		listSum := hash.Sum(nil)
+		if !bytes.Equal(listSum, id.Hash) {
+			t.Fatalf("At level:%d , inner hashes:%x, sums to:%x, expected:%x", i, list, listSum, id.Hash)
+		}
 	}
 }
 
 type testFile struct {
-	index  int64
-	length int64
+	index  hashtree.Bytes
+	length hashtree.Bytes
 }
 
 func (f *testFile) Read(b []byte) (int, error) {
 	if f.index == f.length {
 		return 0, io.EOF
 	}
-	b[0] = testFileG(f.index)
+	b[0] = testFileG(int(f.index))
 	f.index++
 	return 1, nil
 }
 
-func testFileG(index int64) byte {
+func testFileG(index int) byte {
 	return byte(index)
 }
 
-func int32p(n int32) *int32 {
-	return &n
+func int32p(n int) *int32 {
+	m := int32(n)
+	return &m
 }
