@@ -39,10 +39,15 @@ type Nodes int
 
 type HashTree interface {
 	hash.Hash
-	Copy() HashTree
-	Levels(len Bytes) Level
-	LevelWidth(len Bytes, level Level) Nodes
-	SetInnerHashListener(l func(level Level, index Nodes, hash *H256))
+	Nodes(len Bytes) Nodes
+	Levels(n Nodes) Level
+	LevelWidth(n Nodes, level Level) Nodes
+	SetInnerHashListener(l func(l Level, i Nodes, h *H256))
+}
+
+type CopyableHashTree interface {
+	HashTree
+	Copy() CopyableHashTree
 }
 
 // treeDigest represents the partial evaluation of a hashtree.
@@ -58,21 +63,21 @@ type treeDigest struct {
 	innersCounter     [LEVEL_MAX]Nodes
 }
 
-func NewTree() HashTree {
+func NewTree() CopyableHashTree {
 	return NewTree2(ZeroPad32bytes, ht_sha256block)
 }
 
 // Create a binary tree hash using padder and compressor.
 // Padder mush pad to intervals of 256 bits.
 // Compressor mush hash 2 H256s to 1.
-func NewTree2(padder func(d io.Writer, len Bytes), compressor func(l, r *H256) *H256) HashTree {
+func NewTree2(padder func(d io.Writer, len Bytes), compressor func(l, r *H256) *H256) CopyableHashTree {
 	d := new(treeDigest)
 	d.Reset()
 	d.padder = padder
 	d.compressor = compressor
 	return d
 }
-func (d *treeDigest) Copy() HashTree {
+func (d *treeDigest) Copy() CopyableHashTree {
 	d0 := *d
 	return &d0
 }
@@ -84,17 +89,17 @@ func (c *Bytes) Write(p []byte) (length int, nil error) {
 	return
 }
 
-func (d *treeDigest) nodes(len Bytes) Nodes {
+func (d *treeDigest) Nodes(len Bytes) Nodes {
 	d.padder(&len, len)
 	return Nodes(len / treeNodeSize)
 }
 
-func (d *treeDigest) Levels(len Bytes) Level {
-	return Level(math.Ilogb(float64(d.nodes(len)*2-1)) + 1)
+func (d *treeDigest) Levels(n Nodes) Level {
+	return Level(math.Ilogb(float64(n*2-1)) + 1)
 }
 
-func (d *treeDigest) LevelWidth(len Bytes, level Level) Nodes {
-	width := d.nodes(len)
+func (d *treeDigest) LevelWidth(n Nodes, level Level) Nodes {
+	width := n
 	for level > 0 {
 		width = (width + 1) / 2
 		level--

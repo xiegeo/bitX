@@ -7,27 +7,44 @@ import (
 
 // fileDigest represents the partial evaluation of a file hash.
 type fileDigest struct {
-	len           uint64    // processed length
-	leaf          hash.Hash // a hash, used for hashing leaf nodes
-	leafBlockSize int       // size of base block in bytes
-	tree          HashTree  // the digest used for inner and root nodes
+	len           Bytes            // processed length
+	leaf          hash.Hash        // a hash, used for hashing leaf nodes
+	leafBlockSize int              // size of base block in bytes
+	tree          CopyableHashTree // the digest used for inner and root nodes
 }
 
 // Create the standard file tree hash using leaf blocks of 1kB and sha256,
 // and inner hash using sha256 without padding.  
-func NewFile() hash.Hash {
+func NewFile() HashTree {
 	return NewFile2(1024, sha256.New(), NewTree2(NoPad32bytes, ht_sha256block))
 }
 
 // Create any tree hash using leaf blocks of size and leaf hash,
 // and inner hash using tree hash, the tree stucture is internal to the tree hash.  
-func NewFile2(leafBlockSize int, leaf hash.Hash, tree HashTree) hash.Hash {
+func NewFile2(leafBlockSize int, leaf hash.Hash, tree CopyableHashTree) HashTree {
 	d := new(fileDigest)
 	d.len = 0
 	d.leafBlockSize = leafBlockSize
 	d.leaf = leaf
 	d.tree = tree
 	return d
+}
+
+func (d *fileDigest) Nodes(len Bytes) Nodes {
+	b := Bytes(d.BlockSize())
+	return Nodes((len + b - 1) / b)
+}
+
+func (d *fileDigest) Levels(n Nodes) Level {
+	return d.tree.Levels(n)
+}
+
+func (d *fileDigest) LevelWidth(n Nodes, level Level) Nodes {
+	return d.tree.LevelWidth(n, level)
+}
+
+func (d *fileDigest) SetInnerHashListener(l func(level Level, index Nodes, hash *H256)) {
+	d.tree.SetInnerHashListener(l)
 }
 
 func (d *fileDigest) Size() int { return d.tree.Size() }
@@ -53,16 +70,16 @@ func (d *fileDigest) Write(p []byte) (int, error) {
 	if len(p) > 0 {
 		d.leaf.Write(p)
 	}
-	d.len += uint64(startLength)
+	d.len += Bytes(startLength)
 	return startLength, nil
 }
 
-func (d0 *fileDigest) Sum(in []byte) []byte {
-	if int(d0.len)%d0.leafBlockSize != 0 || d0.len == 0 {
-		// Make a copy of d0.tree so that caller can keep writing and summing.
-		tree := d0.tree.Copy()
-		tree.Write(d0.leaf.Sum(nil))
+func (d *fileDigest) Sum(in []byte) []byte {
+	if int(d.len)%d.leafBlockSize != 0 || d.len == 0 {
+		// Make a copy of d.tree so that caller can keep writing and summing.
+		tree := d.tree.Copy()
+		tree.Write(d.leaf.Sum(nil))
 		return tree.Sum(in)
 	}
-	return d0.tree.Sum(in)
+	return d.tree.Sum(in)
 }
