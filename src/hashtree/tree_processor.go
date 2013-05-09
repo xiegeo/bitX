@@ -98,13 +98,15 @@ func (d *treeDigest) Levels(n Nodes) Level {
 	return Level(math.Ilogb(float64(n*2-1)) + 1)
 }
 
-func (d *treeDigest) LevelWidth(n Nodes, level Level) Nodes {
-	width := n
-	for level > 0 {
-		width = (width + 1) / 2
-		level--
+func (d *treeDigest) LevelWidth(n Nodes, l Level) Nodes {
+	if l < 0 {
+		return 0
 	}
-	return width
+	for l > 0 {
+		n = (n + 1) / 2
+		l--
+	}
+	return n
 }
 
 func (d *treeDigest) SetInnerHashListener(l func(level Level, index Nodes, hash *H256)) {

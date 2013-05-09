@@ -35,6 +35,8 @@ type levelWidth struct {
 }
 
 var expectedLevelWidth = []levelWidth{
+	{1, -1, 0}, {2, -1, 0}, {3, -1, 0}, //special case for level < 0, no nodes exist here so the width is 0
+
 	{1, 0, 1},
 
 	{2, 0, 2},
