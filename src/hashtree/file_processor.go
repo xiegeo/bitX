@@ -5,6 +5,10 @@ import (
 	"hash"
 )
 
+const (
+	FILE_BLOCK_SIZE = 1024
+)
+
 // fileDigest represents the partial evaluation of a file hash.
 type fileDigest struct {
 	len           Bytes            // processed length
@@ -16,7 +20,7 @@ type fileDigest struct {
 // Create the standard file tree hash using leaf blocks of 1kB and sha256,
 // and inner hash using sha256 without padding.  
 func NewFile() HashTree {
-	return NewFile2(1024, sha256.New(), NewTree2(NoPad32bytes, ht_sha256block))
+	return NewFile2(FILE_BLOCK_SIZE, sha256.New(), NewTree2(NoPad32bytes, ht_sha256block))
 }
 
 // Create any tree hash using leaf blocks of size and leaf hash,
