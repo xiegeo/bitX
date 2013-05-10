@@ -39,7 +39,7 @@ func testFileSize(size hashtree.Bytes, t *testing.T) {
 	buf := make([]byte, 1024)
 	n := 0
 	for i := 0; i < int(size); i += n {
-		n, _ = d.GetAt(buf, id, int64(i))
+		n, _ = d.GetAt(buf, id, hashtree.Bytes(i))
 		for j := 0; j < n; j++ {
 			if buf[j] != testFileG(i+j) {
 				t.Fatalf("at:%d, got:%x, expected:%x, for file:%s", i+j, buf[j], testFileG(i+j), id.CompactId())

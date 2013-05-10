@@ -13,12 +13,12 @@ import (
 
 var NOT_LOCAL = errors.New("file is not locally available")
 var LEVEL_LOW = errors.New("the inner hash level is lower than cached")
-var LEVEL_HIGH = errors.New("the inner hash level is higher than root")
+var INDEX_OFF = errors.New("the inner hashes does not exist for file of this size")
 
 type Database interface {
-	LowestInnerHashes() int
+	LowestInnerHashes() hashtree.Level
 	ImportFromReader(r io.Reader) network.StaticId
-	GetAt(b []byte, id network.StaticId, off int64) (n int, err error)
+	GetAt(b []byte, id network.StaticId, off hashtree.Bytes) (n int, err error)
 	GetInnerHashes(id network.StaticId, req network.InnerHashes) (network.InnerHashes, error)
 }
 
@@ -33,10 +33,10 @@ func ImportLocalFile(d Database, location string) (id network.StaticId) {
 type simpleDatabase struct {
 	datafolder        *os.File
 	dirname           string
-	lowestInnerHashes int
+	lowestInnerHashes hashtree.Level
 }
 
-func OpenSimpleDatabase(dirname string, lowestInnerHashes int) Database {
+func OpenSimpleDatabase(dirname string, lowestInnerHashes hashtree.Level) Database {
 	os.MkdirAll(dirname, 0777)
 	dir, err := os.Open(dirname)
 	if err != nil {
@@ -51,7 +51,7 @@ func OpenSimpleDatabase(dirname string, lowestInnerHashes int) Database {
 	return d
 }
 
-func (d *simpleDatabase) LowestInnerHashes() int {
+func (d *simpleDatabase) LowestInnerHashes() hashtree.Level {
 	return d.lowestInnerHashes
 }
 
@@ -73,6 +73,7 @@ func (d *simpleDatabase) innerHashListenerFile(hasher hashtree.HashTree, len has
 		panic(err)
 	}
 	listener := func(l hashtree.Level, i hashtree.Nodes, h *hashtree.H256) {
+		//TODO: don't save levels lower than needed
 		if l == top {
 			return //don't need the root here
 		}
@@ -122,23 +123,32 @@ func (d *simpleDatabase) ImportFromReader(r io.Reader) network.StaticId {
 	}
 	return id
 }
-func (d *simpleDatabase) GetAt(b []byte, id network.StaticId, off int64) (int, error) {
+func (d *simpleDatabase) GetAt(b []byte, id network.StaticId, off hashtree.Bytes) (int, error) {
 	f, err := os.Open(d.fileNameForId(id))
 	if err != nil {
 		return 0, NOT_LOCAL
 	}
 	defer f.Close()
-	return f.ReadAt(b, off)
+	return f.ReadAt(b, int64(off))
 }
 
 func (d *simpleDatabase) GetInnerHashes(id network.StaticId, req network.InnerHashes) (network.InnerHashes, error) {
+	leaf := refHash.Nodes(hashtree.Bytes(id.GetLength()))
+	level := hashtree.Level(req.GetHeight())
+	from := hashtree.Nodes(req.GetFrom())
+	nodes := hashtree.Nodes(req.GetLength())
+	if level < d.lowestInnerHashes {
+		return req, LEVEL_LOW
+	} else if from+nodes > refHash.LevelWidth(leaf, level) {
+		return req, INDEX_OFF
+	}
 	f, err := os.Open(d.hashFileNameForId(id))
 	if err != nil {
-		return network.InnerHashes{}, NOT_LOCAL
+		return req, NOT_LOCAL
 	}
 	defer f.Close()
-	off := d.hashPosition(refHash.Nodes(hashtree.Bytes(id.GetLength())), hashtree.Level(req.GetHeight()), hashtree.Nodes(req.GetFrom()))
-	b := make([]byte, refHash.Size()*int(req.GetLength()))
+	off := d.hashPosition(leaf, level, from)
+	b := make([]byte, refHash.Size()*int(nodes))
 	f.ReadAt(b, off)
 	req.Hashes = b
 	return req, nil
