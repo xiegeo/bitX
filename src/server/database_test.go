@@ -83,7 +83,7 @@ func (f *testFile) Read(b []byte) (int, error) {
 }
 
 func testFileG(index int) byte {
-	return byte(index)
+	return byte(index * index / 10007)
 }
 
 func int32p(n int) *int32 {
