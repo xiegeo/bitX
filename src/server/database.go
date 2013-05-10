@@ -55,7 +55,40 @@ func (d *simpleDatabase) LowestInnerHashes() int {
 	return d.lowestInnerHashes
 }
 
-func (d *simpleDatabase) ImportFromReader(r io.Reader) (id network.StaticId) {
+var refHash = hashtree.NewFile()
+
+func (d *simpleDatabase) hashPosition(leafs hashtree.Nodes, l hashtree.Level, n hashtree.Nodes) int64 {
+	sum := hashtree.Nodes(0)
+	for i := hashtree.Level(0); i < l; i++ {
+		fmt.Println("presum:", sum)
+		sum += refHash.LevelWidth(leafs, i)
+	}
+	fmt.Println("sum:", sum)
+	fmt.Println("leafs:", leafs, "Level:", l, "Nodes:", n, "Position:", int64(sum+n)*int64(refHash.Size()))
+	return int64(sum+n) * int64(refHash.Size())
+}
+
+func (d *simpleDatabase) innerHashListenerFile(hasher hashtree.HashTree, len hashtree.Bytes) *os.File {
+	leafs := hasher.Nodes(len)
+	top := hasher.Levels(leafs) - 1
+	fmt.Println("len:", len, "leafs:", leafs)
+	file, err := ioutil.TempFile(d.dirname, "listener-")
+	if err != nil {
+		panic(err)
+	}
+	listener := func(l hashtree.Level, i hashtree.Nodes, h *hashtree.H256) {
+		if l == top {
+			return //don't need the root here
+		}
+		b := h.ToBytes()
+		off := d.hashPosition(leafs, l, i)
+		file.WriteAt(b, off)
+	}
+	hasher.SetInnerHashListener(listener)
+	return file
+}
+
+func (d *simpleDatabase) ImportFromReader(r io.Reader) network.StaticId {
 	f, err := ioutil.TempFile(d.dirname, "import-")
 	if err != nil {
 		panic(err)
@@ -65,13 +98,16 @@ func (d *simpleDatabase) ImportFromReader(r io.Reader) (id network.StaticId) {
 		panic(err2)
 	}
 	hasher := hashtree.NewFile()
+	hashFile := d.innerHashListenerFile(hasher, hashtree.Bytes(len))
+
 	f.Seek(0, os.SEEK_SET)
 	io.Copy(hasher, f)
-	id = network.StaticId{
+	id := network.StaticId{
 		Hash:   hasher.Sum(nil),
 		Length: &len,
 	}
 	f.Close()
+	hashFile.Close()
 	err = os.Rename(f.Name(), d.fileNameForId(id))
 	if err != nil {
 		if os.IsExist(err) {
@@ -80,7 +116,15 @@ func (d *simpleDatabase) ImportFromReader(r io.Reader) (id network.StaticId) {
 			panic(err)
 		}
 	}
-	return
+	err = os.Rename(hashFile.Name(), d.hashFileNameForId(id))
+	if err != nil {
+		if os.IsExist(err) {
+			os.Remove(hashFile.Name())
+		} else {
+			panic(err)
+		}
+	}
+	return id
 }
 func (d *simpleDatabase) GetAt(b []byte, id network.StaticId, off int64) (int, error) {
 	f, err := os.Open(d.fileNameForId(id))
@@ -92,10 +136,21 @@ func (d *simpleDatabase) GetAt(b []byte, id network.StaticId, off int64) (int, e
 }
 
 func (d *simpleDatabase) GetInnerHashes(id network.StaticId, req network.InnerHashes) (network.InnerHashes, error) {
-	//TODO: fill in innerhashes
+	f, err := os.Open(d.hashFileNameForId(id))
+	if err != nil {
+		return network.InnerHashes{}, NOT_LOCAL
+	}
+	defer f.Close()
+	off := d.hashPosition(refHash.Nodes(hashtree.Bytes(id.GetLength())), hashtree.Level(req.GetHeight()), hashtree.Nodes(req.GetFrom()))
+	b := make([]byte, refHash.Size()*int(req.GetLength()))
+	f.ReadAt(b, off)
+	req.Hashes = b
 	return req, nil
 }
 
 func (d *simpleDatabase) fileNameForId(id network.StaticId) string {
-	return fmt.Sprintf("%s/%s", d.datafolder.Name(), id.CompactId())
+	return fmt.Sprintf("%s/F-%s", d.datafolder.Name(), id.CompactId())
+}
+func (d *simpleDatabase) hashFileNameForId(id network.StaticId) string {
+	return fmt.Sprintf("%s/H-%s", d.datafolder.Name(), id.CompactId())
 }
