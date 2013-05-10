@@ -27,18 +27,18 @@ func TestFileIO(t *testing.T) {
 	testFileSize(12345, t)
 }
 
-func testFileSize(len hashtree.Bytes, t *testing.T) {
-	t.Log("testing size:", len)
+func testFileSize(size hashtree.Bytes, t *testing.T) {
+	t.Log("testing size:", size)
 	d := OpenSimpleDatabase(testDatabase, testLevelLow)
 
-	id := d.ImportFromReader(&testFile{length: len})
-	if hashtree.Bytes(id.GetLength()) != len {
-		t.Fatalf("Length is %x, should be %x", id.GetLength(), len)
+	id := d.ImportFromReader(&testFile{length: size})
+	if hashtree.Bytes(id.GetLength()) != size {
+		t.Fatalf("Length is %x, should be %x", id.GetLength(), size)
 	}
 
 	buf := make([]byte, 1024)
 	n := 0
-	for i := 0; i < int(len); i += n {
+	for i := 0; i < int(size); i += n {
 		n, _ = d.GetAt(buf, id, int64(i))
 		for j := 0; j < n; j++ {
 			if buf[j] != testFileG(i+j) {
@@ -48,7 +48,7 @@ func testFileSize(len hashtree.Bytes, t *testing.T) {
 	}
 
 	hash := hashtree.NewTree()
-	leafs := refHash.Nodes(len)
+	leafs := refHash.Nodes(size)
 	t.Log("leafs:", leafs)
 	levels := hash.Levels(leafs)
 	for i := hashtree.Level(testLevelLow); i < levels-1; i++ {
@@ -61,8 +61,9 @@ func testFileSize(len hashtree.Bytes, t *testing.T) {
 		list := got.GetHashes()
 		hash.Write(list)
 		listSum := hash.Sum(nil)
+		hash.Reset()
 		if !bytes.Equal(listSum, id.Hash) {
-			t.Fatalf("Req:%s , got hashes:%x, sums to:%x, expected:%x", req.String(), list, listSum, id.Hash)
+			t.Fatalf("Req:%s , got hashes:%x, len:%d, sums to:%x, expected:%x", req.String(), list, len(list), listSum, id.Hash)
 		}
 	}
 }

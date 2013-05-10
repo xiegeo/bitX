@@ -60,18 +60,14 @@ var refHash = hashtree.NewFile()
 func (d *simpleDatabase) hashPosition(leafs hashtree.Nodes, l hashtree.Level, n hashtree.Nodes) int64 {
 	sum := hashtree.Nodes(0)
 	for i := hashtree.Level(0); i < l; i++ {
-		fmt.Println("presum:", sum)
 		sum += refHash.LevelWidth(leafs, i)
 	}
-	fmt.Println("sum:", sum)
-	fmt.Println("leafs:", leafs, "Level:", l, "Nodes:", n, "Position:", int64(sum+n)*int64(refHash.Size()))
 	return int64(sum+n) * int64(refHash.Size())
 }
 
 func (d *simpleDatabase) innerHashListenerFile(hasher hashtree.HashTree, len hashtree.Bytes) *os.File {
 	leafs := hasher.Nodes(len)
 	top := hasher.Levels(leafs) - 1
-	fmt.Println("len:", len, "leafs:", leafs)
 	file, err := ioutil.TempFile(d.dirname, "listener-")
 	if err != nil {
 		panic(err)
