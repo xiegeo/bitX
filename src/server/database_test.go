@@ -48,19 +48,21 @@ func testFileSize(len hashtree.Bytes, t *testing.T) {
 	}
 
 	hash := hashtree.NewTree()
-	leafs := hashtree.Nodes((len + hashtree.FILE_BLOCK_SIZE - 1) / hashtree.FILE_BLOCK_SIZE)
-	Levels := hash.Levels(leafs)
-	for i := hashtree.Level(testLevelLow); i < Levels; i++ {
-		inner, _ := d.GetInnerHashes(id, network.InnerHashes{
-			Height: int32p(testLevelLow),
+	leafs := refHash.Nodes(len)
+	t.Log("leafs:", leafs)
+	levels := hash.Levels(leafs)
+	for i := hashtree.Level(testLevelLow); i < levels-1; i++ {
+		req := network.InnerHashes{
+			Height: int32p(int(i)),
 			From:   int32p(0),
 			Length: int32p(int(hash.LevelWidth(leafs, i))),
-		})
-		list := inner.GetHashes()
+		}
+		got, _ := d.GetInnerHashes(id, req)
+		list := got.GetHashes()
 		hash.Write(list)
 		listSum := hash.Sum(nil)
 		if !bytes.Equal(listSum, id.Hash) {
-			t.Fatalf("At level:%d , inner hashes:%x, sums to:%x, expected:%x", i, list, listSum, id.Hash)
+			t.Fatalf("Req:%s , got hashes:%x, sums to:%x, expected:%x", req.String(), list, listSum, id.Hash)
 		}
 	}
 }

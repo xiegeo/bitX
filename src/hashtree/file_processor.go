@@ -35,6 +35,9 @@ func NewFile2(leafBlockSize int, leaf hash.Hash, tree CopyableHashTree) HashTree
 }
 
 func (d *fileDigest) Nodes(len Bytes) Nodes {
+	if len == 0 {
+		return 1
+	}
 	b := Bytes(d.BlockSize())
 	return Nodes((len + b - 1) / b)
 }
