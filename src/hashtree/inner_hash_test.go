@@ -71,6 +71,16 @@ func TestInnerHashListener(t *testing.T) {
 		{-1},
 	}, t)
 	testInnerHashListener([][]int32{
+		{0, 1, 1},
+		{-1, 1},
+		{-2},
+	}, t)
+	testInnerHashListener([][]int32{
+		{0, 1, 1, 3},
+		{-1, -2},
+		{1},
+	}, t)
+	testInnerHashListener([][]int32{
 		{1, 1, 2, 3, 5, 8},
 		{0, -1, -3},
 		{1, -3},
