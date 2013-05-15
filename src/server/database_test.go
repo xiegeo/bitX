@@ -37,10 +37,11 @@ func testFileSize(size hashtree.Bytes, t *testing.T) {
 	}
 
 	buf := make([]byte, 1024)
-	n := 0
-	for i := 0; i < int(size); i += n {
-		n, _ = d.GetAt(buf, id, hashtree.Bytes(i))
-		for j := 0; j < n; j++ {
+	n := hashtree.Bytes(0)
+	for i := hashtree.Bytes(0); i < size; i += n {
+		bufLen, _ := d.GetAt(buf, id, i)
+		n = hashtree.Bytes(bufLen)
+		for j := hashtree.Bytes(0); j < n; j++ {
 			if buf[j] != testFileG(i+j) {
 				t.Fatalf("at:%d, got:%x, expected:%x, for file:%s", i+j, buf[j], testFileG(i+j), id.CompactId())
 			}
@@ -79,14 +80,14 @@ func (f *testFile) Read(b []byte) (int, error) {
 		if f.index == f.length {
 			return i, io.EOF
 		}
-		b[i] = testFileG(int(f.index))
+		b[i] = testFileG(f.index)
 		f.index++
 	}
 
 	return i, nil
 }
 
-func testFileG(index int) byte {
+func testFileG(index hashtree.Bytes) byte {
 	return byte(index * index / 10007)
 }
 
