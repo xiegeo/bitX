@@ -18,8 +18,10 @@ var INDEX_OFF = errors.New("the inner hashes does not exist for file of this siz
 type Database interface {
 	LowestInnerHashes() hashtree.Level
 	ImportFromReader(r io.Reader) network.StaticId
-	GetAt(b []byte, id network.StaticId, off hashtree.Bytes) (n int, err error)
+	GetAt(b []byte, id network.StaticId, off hashtree.Bytes) (int, error)
 	GetInnerHashes(id network.StaticId, req network.InnerHashes) (network.InnerHashes, error)
+	PutAt(b []byte, id network.StaticId, off hashtree.Bytes) error
+	PutInnerHashes(id network.StaticId, set network.InnerHashes) error
 }
 
 func ImportLocalFile(d Database, location string) (id network.StaticId) {
@@ -152,6 +154,13 @@ func (d *simpleDatabase) GetInnerHashes(id network.StaticId, req network.InnerHa
 	f.ReadAt(b, off)
 	req.Hashes = b
 	return req, nil
+}
+
+func (d *simpleDatabase) PutAt(b []byte, id network.StaticId, off hashtree.Bytes) error {
+	return nil
+}
+func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHashes) error {
+	return nil
 }
 
 func (d *simpleDatabase) fileNameForId(id network.StaticId) string {
