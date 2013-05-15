@@ -74,12 +74,16 @@ type testFile struct {
 }
 
 func (f *testFile) Read(b []byte) (int, error) {
-	if f.index == f.length {
-		return 0, io.EOF
+	i := 0
+	for ; i < len(b); i++ {
+		if f.index == f.length {
+			return i, io.EOF
+		}
+		b[i] = testFileG(int(f.index))
+		f.index++
 	}
-	b[0] = testFileG(int(f.index))
-	f.index++
-	return 1, nil
+
+	return i, nil
 }
 
 func testFileG(index int) byte {
