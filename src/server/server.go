@@ -25,18 +25,18 @@ func (s *Server) consume(ps <-chan network.BitXPacket) {
 
 func (s *Server) process(bp network.BitXPacket) {
 	addr := bp.Addr
-	reci := bp.Packet
+	rece := bp.Packet
 	send := &network.Packet{}
-	if reci.Hello != nil {
-		log.Printf("got hello:%v from:%v", reci.Hello, addr)
+	if rece.Hello != nil {
+		log.Printf("got hello:%v from:%v", rece.Hello, addr)
 	}
-	if reci.GetHelloRequest() {
+	if rece.GetHelloRequest() {
 		log.Printf("req hello from:%v", addr)
 		send.Hello = &s.Setting.Hello
 	}
 
-	if reci.File != nil {
-		for _, f := range reci.File {
+	if rece.File != nil {
+		for _, f := range rece.File {
 			id := f.Id
 			log.Printf("about:%v", id)
 		}
