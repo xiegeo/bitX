@@ -18,13 +18,13 @@ type fileDigest struct {
 }
 
 // Create the standard file tree hash using leaf blocks of 1kB and sha256,
-// and inner hash using sha256 without padding.  
+// and inner hash using sha256 without padding.
 func NewFile() HashTree {
 	return NewFile2(FILE_BLOCK_SIZE, sha256.New(), NewTree2(NoPad32bytes, ht_sha256block))
 }
 
 // Create any tree hash using leaf blocks of size and leaf hash,
-// and inner hash using tree hash, the tree stucture is internal to the tree hash.  
+// and inner hash using tree hash, the tree stucture is internal to the tree hash.
 func NewFile2(leafBlockSize int, leaf hash.Hash, tree CopyableHashTree) HashTree {
 	d := new(fileDigest)
 	d.len = 0
