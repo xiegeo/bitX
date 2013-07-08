@@ -15,11 +15,21 @@ var NOT_LOCAL = errors.New("file is not locally available")
 var LEVEL_LOW = errors.New("the inner hash level is lower than cached")
 var INDEX_OFF = errors.New("the inner hashes does not exist for file of this size")
 
+type FileState int
+
+const (
+	FILE_UNKNOW FileState = iota
+	FILE_PART
+	FILE_COMPLET
+)
+
 type Database interface {
 	LowestInnerHashes() hashtree.Level
 	ImportFromReader(r io.Reader) network.StaticId
+	GetState(id network.StaticId) FileState
 	GetAt(b []byte, id network.StaticId, off hashtree.Bytes) (int, error)
 	GetInnerHashes(id network.StaticId, req network.InnerHashes) (network.InnerHashes, error)
+	StartPart(id network.StaticId) error
 	PutAt(b []byte, id network.StaticId, off hashtree.Bytes) error
 	PutInnerHashes(id network.StaticId, set network.InnerHashes) error
 }
@@ -125,6 +135,11 @@ func (d *simpleDatabase) ImportFromReader(r io.Reader) network.StaticId {
 	}
 	return id
 }
+
+func (d *simpleDatabase) GetState(id network.StaticId) FileState {
+	return FILE_UNKNOW
+}
+
 func (d *simpleDatabase) GetAt(b []byte, id network.StaticId, off hashtree.Bytes) (int, error) {
 	f, err := os.Open(d.fileNameForId(id))
 	if err != nil {
@@ -155,7 +170,9 @@ func (d *simpleDatabase) GetInnerHashes(id network.StaticId, req network.InnerHa
 	req.Hashes = b
 	return req, nil
 }
-
+func (d *simpleDatabase) StartPart(id network.StaticId) error {
+	return nil
+}
 func (d *simpleDatabase) PutAt(b []byte, id network.StaticId, off hashtree.Bytes) error {
 	return nil
 }
