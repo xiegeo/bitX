@@ -20,7 +20,7 @@ type FileState int
 const (
 	FILE_UNKNOW FileState = iota
 	FILE_PART
-	FILE_COMPLET
+	FILE_COMPLETE
 )
 
 type Database interface {
