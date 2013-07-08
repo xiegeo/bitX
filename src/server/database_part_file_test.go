@@ -53,4 +53,8 @@ func testPartSize(size hashtree.Bytes, source Database, part Database, t *testin
 		t.Fatalf("should have started saving parts for:%s", id.CompactId())
 	}
 	//after all parts are saved, it should be complete
+	part.ImportFromReader(&testFile{length: size})
+	if part.GetState(id) != FILE_COMPLETE {
+		t.Fatalf("The file should be complete:%s", id.CompactId())
+	}
 }

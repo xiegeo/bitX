@@ -11,9 +11,10 @@ import (
 	"os"
 )
 
-var NOT_LOCAL = errors.New("file is not locally available")
-var LEVEL_LOW = errors.New("the inner hash level is lower than cached")
-var INDEX_OFF = errors.New("the inner hashes does not exist for file of this size")
+var ERROR_NOT_LOCAL = errors.New("file is not locally available")
+var ERROR_LEVEL_LOW = errors.New("the inner hash level is lower than cached")
+var ERROR_INDEX_OFF = errors.New("the index of inner hashes is out of range for file of this size")
+var ERROR_ALREADY_EXIST = errors.New("the thing was already added or started")
 
 type FileState int
 
@@ -137,13 +138,23 @@ func (d *simpleDatabase) ImportFromReader(r io.Reader) network.StaticId {
 }
 
 func (d *simpleDatabase) GetState(id network.StaticId) FileState {
-	return FILE_UNKNOW
+	_, err := os.Stat(d.fileNameForId(id))
+	if os.IsNotExist(err) {
+		_, err = os.Stat(d.hashFileNameForId(id))
+		if os.IsNotExist(err) {
+			return FILE_UNKNOW
+		} else {
+			return FILE_PART
+		}
+	} else {
+		return FILE_COMPLETE
+	}
 }
 
 func (d *simpleDatabase) GetAt(b []byte, id network.StaticId, off hashtree.Bytes) (int, error) {
 	f, err := os.Open(d.fileNameForId(id))
 	if err != nil {
-		return 0, NOT_LOCAL
+		return 0, ERROR_NOT_LOCAL
 	}
 	defer f.Close()
 	return f.ReadAt(b, int64(off))
@@ -155,13 +166,13 @@ func (d *simpleDatabase) GetInnerHashes(id network.StaticId, req network.InnerHa
 	from := hashtree.Nodes(req.GetFrom())
 	nodes := hashtree.Nodes(req.GetLength())
 	if level < d.lowestInnerHashes {
-		return req, LEVEL_LOW
+		return req, ERROR_LEVEL_LOW
 	} else if from+nodes > refHash.LevelWidth(leaf, level) {
-		return req, INDEX_OFF
+		return req, ERROR_INDEX_OFF
 	}
 	f, err := os.Open(d.hashFileNameForId(id))
 	if err != nil {
-		return req, NOT_LOCAL
+		return req, ERROR_NOT_LOCAL
 	}
 	defer f.Close()
 	off := d.hashPosition(leaf, level, from)
@@ -171,7 +182,21 @@ func (d *simpleDatabase) GetInnerHashes(id network.StaticId, req network.InnerHa
 	return req, nil
 }
 func (d *simpleDatabase) StartPart(id network.StaticId) error {
-	return nil
+	_, err := os.Stat(d.hashFileNameForId(id))
+	if os.IsNotExist(err) {
+		_, err := os.Create(d.partFileNameForId(id))
+		if err != nil {
+			return err
+		}
+		_, err = os.Create(d.hashFileNameForId(id))
+		if err != nil {
+			return err
+		}
+		return nil
+	} else {
+		return ERROR_ALREADY_EXIST
+	}
+
 }
 func (d *simpleDatabase) PutAt(b []byte, id network.StaticId, off hashtree.Bytes) error {
 	return nil
@@ -185,4 +210,7 @@ func (d *simpleDatabase) fileNameForId(id network.StaticId) string {
 }
 func (d *simpleDatabase) hashFileNameForId(id network.StaticId) string {
 	return fmt.Sprintf("%s/H-%s", d.datafolder.Name(), id.CompactId())
+}
+func (d *simpleDatabase) partFileNameForId(id network.StaticId) string {
+	return fmt.Sprintf("%s/P-%s", d.datafolder.Name(), id.CompactId())
 }
