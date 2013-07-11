@@ -18,6 +18,11 @@ echo ### server ###
 go fmt
 call :go_test
 
+cd "..\data\bitset"
+echo ### bitset ###
+go fmt
+call :go_test
+
 ENDLOCAL & goto:EOF
 
 :go_test
