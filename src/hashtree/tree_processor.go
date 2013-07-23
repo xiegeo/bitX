@@ -8,6 +8,7 @@ import (
 )
 
 const treeNodeSize = 32
+const HASH_BYTES = treeNodeSize
 const LEVEL_MAX = 64
 
 type H256 [8]uint32 //the internal hash
@@ -72,6 +73,10 @@ func NewTree() CopyableHashTree {
 	return NewTree2(ZeroPad32bytes, ht_sha256block)
 }
 
+func NewNoPadTree() CopyableHashTree {
+	return NewTree2(NoPad32bytes, ht_sha256block)
+}
+
 // Create a binary tree hash using padder and compressor.
 // Padder mush pad to intervals of 256 bits.
 // Compressor mush hash 2 H256s to 1.
@@ -94,16 +99,24 @@ func (c *Bytes) Write(p []byte) (length int, nil error) {
 	return
 }
 
-func (d *treeDigest) Nodes(len Bytes) Nodes {
-	d.padder(&len, len)
-	return Nodes(len / treeNodeSize)
+func NodesFromBytes(len Bytes, blockSize Bytes) Nodes {
+	return Nodes((len-1)/blockSize) + 1
 }
 
-func (d *treeDigest) Levels(n Nodes) Level {
+func (d *treeDigest) Nodes(len Bytes) Nodes {
+	d.padder(&len, len)
+	return NodesFromBytes(len, treeNodeSize)
+}
+
+func Levels(n Nodes) Level {
 	return Level(math.Ilogb(float64(n*2-1)) + 1)
 }
 
-func (d *treeDigest) LevelWidth(n Nodes, l Level) Nodes {
+func (d *treeDigest) Levels(n Nodes) Level {
+	return Levels(n)
+}
+
+func LevelWidth(n Nodes, l Level) Nodes {
 	if l < 0 {
 		return 0
 	}
@@ -112,6 +125,10 @@ func (d *treeDigest) LevelWidth(n Nodes, l Level) Nodes {
 		l--
 	}
 	return n
+}
+
+func (d *treeDigest) LevelWidth(n Nodes, l Level) Nodes {
+	return LevelWidth(n, l)
 }
 
 func (d *treeDigest) SetInnerHashListener(l func(level Level, index Nodes, hash *H256)) {
