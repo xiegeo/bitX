@@ -1,8 +1,8 @@
 package server
 
 import (
+	"../data/network"
 	"../hashtree"
-	"../network"
 	"bytes"
 	"io"
 	"os"

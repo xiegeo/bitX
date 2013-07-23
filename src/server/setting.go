@@ -1,7 +1,7 @@
 package server
 
 import (
-	"../network"
+	"../data/network"
 )
 
 type Setting struct {
