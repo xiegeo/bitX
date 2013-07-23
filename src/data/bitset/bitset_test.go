@@ -50,14 +50,36 @@ func checkAll(t *testing.T, s BitSet, max int) {
 	checkUnset(t, s, max)
 }
 
+func tryOutSide(s GetBitSet, index int, t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("index %v should panic for capacity %v", index, s.Capacity())
+		}
+	}()
+	s.Get(index)
+}
+
 func testSimple(cap int, t *testing.T) {
 	s := NewSimple(cap)
 	checkAll(t, s, cap)
+	if s.Capacity() != cap {
+		t.Fatalf("capacity should be %v but returns %v", cap, s.Capacity())
+	}
+	if checkIndex {
+		tryOutSide(s, -1, t)
+		tryOutSide(s, cap, t)
+	}
 }
 
-func TestSet31(t *testing.T) { testSimple(31, t) }
-func TestSet32(t *testing.T) { testSimple(32, t) }
-func TestSet33(t *testing.T) { testSimple(33, t) }
-func TestSet63(t *testing.T) { testSimple(63, t) }
-func TestSet64(t *testing.T) { testSimple(64, t) }
-func TestSet65(t *testing.T) { testSimple(65, t) }
+func TestSet0(t *testing.T)   { testSimple(0, t) }
+func TestSet1(t *testing.T)   { testSimple(1, t) }
+func TestSet2(t *testing.T)   { testSimple(2, t) }
+func TestSet31(t *testing.T)  { testSimple(31, t) }
+func TestSet32(t *testing.T)  { testSimple(32, t) }
+func TestSet33(t *testing.T)  { testSimple(33, t) }
+func TestSet63(t *testing.T)  { testSimple(63, t) }
+func TestSet64(t *testing.T)  { testSimple(64, t) }
+func TestSet65(t *testing.T)  { testSimple(65, t) }
+func TestSet127(t *testing.T) { testSimple(127, t) }
+func TestSet128(t *testing.T) { testSimple(128, t) }
+func TestSet129(t *testing.T) { testSimple(129, t) }
