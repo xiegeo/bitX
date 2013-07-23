@@ -16,12 +16,12 @@ go fmt
 call :go_test
 cd ".."
 
-cd "network"
+cd "data\network"
 echo ### network ###
 go fmt
 protoc --go_out=. *.proto
 call :go_test
-cd ".."
+cd "..\.."
 
 cd "server"
 echo ### server ###
