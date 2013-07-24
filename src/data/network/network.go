@@ -87,7 +87,7 @@ func (in *InnerHashes) Part(from hashtree.Nodes, to hashtree.Nodes) *InnerHashes
 func (in *InnerHashes) Parts(l [][2]hashtree.Nodes) []*InnerHashes {
 	r := make([]*InnerHashes, len(l))
 	for _, v := range l {
-		r = append(r, in.Part(v[0],v[1]))
+		r = append(r, in.Part(v[0], v[1]))
 	}
 	return r
 }
@@ -99,7 +99,7 @@ func mergeR(a [][2]hashtree.Nodes, b [][2]hashtree.Nodes) [][2]hashtree.Nodes {
 	return result
 }
 
-func shiftsls(sls [][2]hashtree.Nodes, delta hashtree.Nodes) [][2]hashtree.Nodes{
+func shiftsls(sls [][2]hashtree.Nodes, delta hashtree.Nodes) [][2]hashtree.Nodes {
 	for i := 0; i < len(sls); i++ {
 		sls[i][0] += delta
 		sls[i][1] += delta
@@ -108,7 +108,7 @@ func shiftsls(sls [][2]hashtree.Nodes, delta hashtree.Nodes) [][2]hashtree.Nodes
 }
 
 func sls(from hashtree.Nodes, to hashtree.Nodes, width hashtree.Nodes) [][2]hashtree.Nodes {
-	from = (from + 1) /2*2 
+	from = (from + 1) / 2 * 2
 	if to-from <= 0 {
 		return nil
 	}
@@ -118,17 +118,17 @@ func sls(from hashtree.Nodes, to hashtree.Nodes, width hashtree.Nodes) [][2]hash
 		if to == width-1 || to == dev-1 {
 			return [][2]hashtree.Nodes{{from, to}}
 		}
-		return mergeR(sls(from, dev-1, dev), shiftsls(sls(0, to-dev, width-dev),dev))
+		return mergeR(sls(from, dev-1, dev), shiftsls(sls(0, to-dev, width-dev), dev))
 	} else {
-		dev := expb(logb(width-1))
+		dev := expb(logb(width - 1))
 		//log.Println(from,to,width,dev);
 		if from < dev {
 			if to < dev {
 				return sls(from, to, dev)
-			}else{
-				return mergeR(sls(from, dev-1, dev), shiftsls(sls(0, to-dev, width-dev),dev))
+			} else {
+				return mergeR(sls(from, dev-1, dev), shiftsls(sls(0, to-dev, width-dev), dev))
 			}
-		}else{
+		} else {
 			return shiftsls(sls(from-dev, to-dev, width-dev), dev)
 		}
 	}
