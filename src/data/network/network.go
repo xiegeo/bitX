@@ -99,26 +99,38 @@ func mergeR(a [][2]hashtree.Nodes, b [][2]hashtree.Nodes) [][2]hashtree.Nodes {
 	return result
 }
 
+func shiftsls(sls [][2]hashtree.Nodes, delta hashtree.Nodes) [][2]hashtree.Nodes{
+	for i := 0; i < len(sls); i++ {
+		sls[i][0] += delta
+		sls[i][1] += delta
+	}
+	return sls
+}
+
 func sls(from hashtree.Nodes, to hashtree.Nodes, width hashtree.Nodes) [][2]hashtree.Nodes {
-	if to-from <= 1 {
+	from = (from + 1) /2*2 
+	if to-from <= 0 {
 		return nil
 	}
 	if from == 0 {
 		dev := expb(logb(to + 1))
+		//log.Println(from,to,width,dev);
 		if to == width-1 || to == dev-1 {
 			return [][2]hashtree.Nodes{{from, to}}
 		}
-		return mergeR(sls(from, dev-1, width), sls(dev, to, width))
+		return mergeR(sls(from, dev-1, dev), shiftsls(sls(0, to-dev, width-dev),dev))
 	} else {
-		dev := expb(logb(from) + 1)
-		if to >= dev {
-			return mergeR(sls(from, dev-1, width), sls(dev, to, width))
-		} else if to == dev-1 {
-			return [][2]hashtree.Nodes{{from, to}}
+		dev := expb(logb(width-1))
+		//log.Println(from,to,width,dev);
+		if from < dev {
+			if to < dev {
+				return sls(from, to, dev)
+			}else{
+				return mergeR(sls(from, dev-1, dev), shiftsls(sls(0, to-dev, width-dev),dev))
+			}
+		}else{
+			return shiftsls(sls(from-dev, to-dev, width-dev), dev)
 		}
-		zoom := expb(logb(to - from))
-		dev -= zoom
-		return mergeR(sls(from, dev-1, width), sls(dev, to, width))
 	}
 }
 
@@ -126,7 +138,6 @@ func (in *InnerHashes) SplitLocalSummable(id *StaticId) []*InnerHashes {
 	if err := in.CheckWellFormedForId(id); err != nil {
 		panic(err)
 	}
-	nextEven := hashtree.Nodes(in.GetFrom()+1) / 2 * 2
-	ranges := sls(nextEven, hashtree.Nodes(in.GetFrom()+in.GetLength()), id.WidthForLevelOf(in))
+	ranges := sls(hashtree.Nodes(in.GetFrom()), hashtree.Nodes(in.GetFrom()+in.GetLength()), id.WidthForLevelOf(in))
 	return in.Parts(ranges)
 }
