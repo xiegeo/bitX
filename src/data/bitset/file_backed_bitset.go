@@ -40,7 +40,7 @@ func NewFileBacked(f *os.File, capacity int) *FileBackedBitSet {
 			panic(err)
 		}
 	}
-	return &FileBackedBitSet{f, capacity, nil}
+	return &FileBackedBitSet{f, capacity, make(map[int]map[int]bool)}
 }
 
 func (b *FileBackedBitSet) locateChange(key int) (bucket int, bit int) {
@@ -52,7 +52,12 @@ func (b *FileBackedBitSet) locateChange(key int) (bucket int, bit int) {
 
 func (b *FileBackedBitSet) SetAs(i int, v bool) {
 	bucket, bit := b.locateChange(i)
-	b.changes[bucket][bit] = v
+	bmap, ok := b.changes[bucket]
+	if !ok {
+		bmap = make(map[int]bool)
+		b.changes[bucket] = bmap
+	}
+	bmap[bit] = v
 }
 
 func (b *FileBackedBitSet) Set(i int) {
