@@ -12,7 +12,7 @@ const (
 		Always checks the index.
 		If false and index is outside of capacity, then behaviour is undefined.
 	*/
-	checkIndex = true
+	CHECK_INTEX = true
 )
 
 type GetBitSet interface {
@@ -46,10 +46,14 @@ const (
 	_W = _S << 3 // word size in bits
 )
 
-func (s *SimpleBitSet) locate(key int) (bucket int, mask Word) {
-	if checkIndex && (key < 0 || key >= s.c) {
-		panic(fmt.Errorf("bitset: index %v outside of range 0 to %v", key, s.c-1))
+func checkIndex(key int, cap int) {
+	if CHECK_INTEX && (key < 0 || key >= cap) {
+		panic(fmt.Errorf("bitset: index %v outside of range 0 to %v", key, cap-1))
 	}
+}
+
+func (s *SimpleBitSet) locate(key int) (bucket int, mask Word) {
+	checkIndex(key, s.c)
 	bucket = key / _W
 	mask = 1 << Word(key%_W)
 	return

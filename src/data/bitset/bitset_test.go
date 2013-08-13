@@ -65,7 +65,7 @@ func testSimple(cap int, t *testing.T) {
 	if s.Capacity() != cap {
 		t.Fatalf("capacity should be %v but returns %v", cap, s.Capacity())
 	}
-	if checkIndex {
+	if CHECK_INTEX {
 		tryOutSide(s, -1, t)
 		tryOutSide(s, cap, t)
 	}
