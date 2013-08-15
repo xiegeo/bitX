@@ -42,6 +42,7 @@ func testFileBacked(cap int, t *testing.T) {
 		tryOutSide(s, -1, t)
 		tryOutSide(s, cap, t)
 	}
+	f.Close()
 	os.Remove(fileName)
 }
 
