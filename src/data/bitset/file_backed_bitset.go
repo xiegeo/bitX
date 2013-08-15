@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	fileBlockSize  = 4096 //byte rage of changes packed into one file write operation
-	fileBlockBites = fileBlockSize * 8
+	fileBlockSize = 4096 //byte rage of changes packed into one file write operation
+	fileBlockBits = fileBlockSize * 8
 )
 
 /*
@@ -45,8 +45,15 @@ func NewFileBacked(f *os.File, capacity int) *FileBackedBitSet {
 
 func (b *FileBackedBitSet) locateChange(key int) (bucket int, bit int) {
 	checkIndex(key, b.c)
-	bucket = key / fileBlockBites
-	bit = key - (bucket * fileBlockBites)
+	bucket = key / fileBlockBits
+	bit = key - (bucket * fileBlockBits)
+	return
+}
+
+func (b *FileBackedBitSet) locateByteMask(key int) (bucket int, mask byte) {
+	checkIndex(key, b.c)
+	bucket = key / 8
+	mask = 1 << byte(key%8)
 	return
 }
 
@@ -75,11 +82,47 @@ func (b *FileBackedBitSet) Get(i int) bool {
 		return v
 	}
 	oneByte := make([]byte, 1)
-	_, err := b.f.ReadAt(oneByte, int64(i)/8)
+	maskBucket, mask := b.locateByteMask(i)
+	_, err := b.f.ReadAt(oneByte, int64(maskBucket))
 	if err != nil {
 		panic(err)
 	}
-	return (oneByte[0] & (1 << byte(i%8))) != 0
+	return (oneByte[0] & mask) != 0
 }
 
 func (b *FileBackedBitSet) Capacity() int { return b.c }
+
+func (b *FileBackedBitSet) Flush() {
+	if len(b.changes) == 0 {
+		return
+	}
+	buffer := make([]byte, fileBlockSize)
+	buckets := (b.c + fileBlockBits - 1) / fileBlockBits
+	for i := 0; i < buckets; i++ {
+		bmap := b.changes[i]
+		delete(b.changes, i)
+		if len(bmap) > 0 {
+			starts := i * fileBlockSize
+			if i == buckets-1 {
+				bufferSize := (b.c+8-1)/8 - starts
+				buffer = make([]byte, bufferSize)
+			}
+			_, err := b.f.ReadAt(buffer, int64(starts))
+			if err != nil {
+				panic(err)
+			}
+			for k, v := range bmap {
+				maskBucket, mask := b.locateByteMask(k)
+				if v {
+					buffer[maskBucket] |= mask
+				} else {
+					buffer[maskBucket] &^= mask
+				}
+			}
+			_, err = b.f.WriteAt(buffer, int64(starts))
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+}

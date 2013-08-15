@@ -30,6 +30,11 @@ type BitSet interface {
 	PutBitSet
 }
 
+type FlushableBitSet interface {
+	BitSet
+	Flush()
+}
+
 type Word uintptr
 
 type SimpleBitSet struct {
