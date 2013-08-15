@@ -2,9 +2,9 @@ package bitset
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"testing"
-	"math/rand"
 )
 
 type randomFlushingBitSet struct {
@@ -33,7 +33,7 @@ func testFileBacked(cap int, t *testing.T) {
 		t.Fatal(err)
 	}
 	nfb := NewFileBacked(f, cap)
-	s :=  &randomFlushingBitSet{nfb, rand.New(rand.NewSource(0))}
+	s := &randomFlushingBitSet{nfb, rand.New(rand.NewSource(0))}
 	checkAll(t, s, cap)
 	if s.Capacity() != cap {
 		t.Fatalf("capacity should be %v but returns %v", cap, s.Capacity())
