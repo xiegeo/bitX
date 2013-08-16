@@ -1,7 +1,7 @@
 package server
 
 import (
-	"../data/network"
+	"../network"
 	logPkg "log"
 	"os"
 )

@@ -4,11 +4,11 @@ pushd "%~dp0"
 
 cd "..\src"
 
-cd "data\bitset"
+cd "bitset"
 echo ### bitset ###
 go fmt
 call :go_test
-cd "..\.."
+cd ".."
 
 cd "hashtree"
 echo ### hashtree ###
@@ -16,12 +16,12 @@ go fmt
 call :go_test
 cd ".."
 
-cd "data\network"
+cd "network"
 echo ### network ###
 go fmt
 protoc --go_out=. *.proto
 call :go_test
-cd "..\.."
+cd ".."
 
 cd "server"
 echo ### server ###

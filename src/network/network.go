@@ -1,7 +1,7 @@
 package network
 
 import (
-	"../../hashtree"
+	"../hashtree"
 	"fmt"
 )
 
