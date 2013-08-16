@@ -5,6 +5,7 @@ import (
 	"../hashtree"
 	"../network"
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -197,14 +198,18 @@ func (d *simpleDatabase) GetInnerHashes(id network.StaticId, req network.InnerHa
 func (d *simpleDatabase) StartPart(id network.StaticId) error {
 	_, err := os.Stat(d.hashFileNameForId(id))
 	if os.IsNotExist(err) {
-		_, err := os.Create(d.partFileNameForId(id))
+		pf, err := os.Create(d.partFileNameForId(id))
 		if err != nil {
 			return err
 		}
-		_, err = os.Create(d.hashFileNameForId(id))
-		if err != nil {
-			return err
+		defer pf.Close()
+		hf, err2 := os.Create(d.hashFileNameForId(id))
+		if err2 != nil {
+			return err2
 		}
+		defer hf.Close()
+		leafs := id.Blocks()
+		hf.WriteAt(id.GetHash(), d.hashPosition(leafs, hashtree.Levels(leafs), 0))
 		return nil
 	} else {
 		return ERROR_ALREADY_EXIST
@@ -218,6 +223,12 @@ func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHa
 	leafs := id.Blocks()
 	bits := bitset.OpenFileBacked(d.haveHashNameForId(id), int(d.hashTopNumber(leafs)-1))
 	defer bits.Close()
+	f, err := os.Open(d.hashFileNameForId(id))
+	if err != nil {
+		return ERROR_NOT_LOCAL
+	}
+	defer f.Close()
+	hashBuffer := make([]byte, refHash.Size())
 	splited := set.SplitLocalSummable(&id)
 	for _, hashes := range splited {
 		l, n := hashes.LocalRoot()
@@ -227,8 +238,15 @@ func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHa
 		} else if !bits.Get(key) {
 			continue // this part of hashes can not be verified, skiped
 		}
-		//sum := hashes.LocalSum()
-
+		sum := hashes.LocalSum()
+		off := d.hashPosition(leafs, l, n)
+		if _, err := f.ReadAt(hashBuffer, off); err != nil {
+			panic(err)
+		}
+		if bytes.Equal(sum, hashBuffer) {
+			//verified
+			//todo save
+		}
 	}
 	return nil
 }
