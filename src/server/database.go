@@ -70,12 +70,16 @@ func (d *simpleDatabase) LowestInnerHashes() hashtree.Level {
 
 var refHash = hashtree.NewFile()
 
-func (d *simpleDatabase) hashPosition(leafs hashtree.Nodes, l hashtree.Level, n hashtree.Nodes) int64 {
+func (d *simpleDatabase) hashNumber(leafs hashtree.Nodes, l hashtree.Level, n hashtree.Nodes) int64 {
 	sum := hashtree.Nodes(0)
 	for i := hashtree.Level(0); i < l; i++ {
 		sum += refHash.LevelWidth(leafs, i)
 	}
-	return int64(sum+n) * int64(refHash.Size())
+	return int64(sum + n)
+}
+
+func (d *simpleDatabase) hashPosition(leafs hashtree.Nodes, l hashtree.Level, n hashtree.Nodes) int64 {
+	return d.hashNumber(leafs, l, n) * int64(refHash.Size())
 }
 
 func (d *simpleDatabase) innerHashListenerFile(hasher hashtree.HashTree, len hashtree.Bytes) *os.File {
