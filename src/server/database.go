@@ -1,6 +1,7 @@
 package server
 
 import (
+	"../bitset"
 	"../hashtree"
 	"../network"
 	"bufio"
@@ -76,6 +77,14 @@ func (d *simpleDatabase) hashNumber(leafs hashtree.Nodes, l hashtree.Level, n ha
 		sum += refHash.LevelWidth(leafs, i)
 	}
 	return int64(sum + n)
+}
+func (d *simpleDatabase) hashTopNumber(leafs hashtree.Nodes) int64 {
+	sum := hashtree.Nodes(0)
+	l := hashtree.Levels(leafs)
+	for i := hashtree.Level(0); i < l; i++ {
+		sum += refHash.LevelWidth(leafs, i)
+	}
+	return int64(sum)
 }
 
 func (d *simpleDatabase) hashPosition(leafs hashtree.Nodes, l hashtree.Level, n hashtree.Nodes) int64 {
@@ -206,6 +215,21 @@ func (d *simpleDatabase) PutAt(b []byte, id network.StaticId, off hashtree.Bytes
 	return nil
 }
 func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHashes) error {
+	leafs := id.Blocks()
+	bits := bitset.OpenFileBacked(d.haveHashNameForId(id), int(d.hashTopNumber(leafs)-1))
+	defer bits.Close()
+	splited := set.SplitLocalSummable(&id)
+	for _, hashes := range splited {
+		l, n := hashes.LocalRoot()
+		key := int(d.hashNumber(leafs, l, n))
+		if key == bits.Capacity() {
+			//this is root
+		} else if !bits.Get(key) {
+			continue // this part of hashes can not be verified, skiped
+		}
+		//sum := hashes.LocalSum()
+
+	}
 	return nil
 }
 
