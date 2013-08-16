@@ -15,7 +15,7 @@ and flashes on demand. BitSets are nomally used as metadata, so
 it should only flash after the main data flashes.
 
 Currently, it appears that file read can be an expansive operation,
-cached or not. A solution is pushed back until usage pattern is 
+cached or not. A solution is pushed back until usage pattern is
 more apparent.
 */
 type FileBackedBitSet struct {
