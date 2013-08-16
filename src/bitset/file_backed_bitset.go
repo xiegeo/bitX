@@ -24,6 +24,14 @@ type FileBackedBitSet struct {
 	changes map[int]map[int]bool //[block number][bit number in block] = set as
 }
 
+func OpenFileBacked(fileName string, capacity int) *FileBackedBitSet {
+	file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		panic(err)
+	}
+	return NewFileBacked(file, capacity)
+}
+
 /*
 If file size match capacity, use the file as bitmap.
 Otherwise create the file sized to capacity and zero filled.
@@ -95,6 +103,19 @@ func (b *FileBackedBitSet) Get(i int) bool {
 }
 
 func (b *FileBackedBitSet) Capacity() int { return b.c }
+
+// Flush changes and Close the file, BitSet must not be used again
+func (b *FileBackedBitSet) Close() {
+	b.Flush()
+	err := b.f.Close()
+	if err != nil {
+		panic(err)
+	}
+	//nil all internal pointers
+	b.f = nil
+	b.changes = nil
+	b.c = -1
+}
 
 func (b *FileBackedBitSet) Flush() {
 	if len(b.changes) == 0 {

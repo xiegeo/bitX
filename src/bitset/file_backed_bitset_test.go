@@ -28,11 +28,7 @@ func (b *randomFlushingBitSet) Unset(i int) {
 
 func testFileBacked(cap int, t *testing.T) {
 	fileName := fmt.Sprintf(".testfile_%v", cap)
-	f, err := os.Create(fileName)
-	if err != nil {
-		t.Fatal(err)
-	}
-	nfb := NewFileBacked(f, cap)
+	nfb := OpenFileBacked(fileName, cap)
 	s := &randomFlushingBitSet{nfb, rand.New(rand.NewSource(0))}
 	checkAll(t, s, cap)
 	if s.Capacity() != cap {
@@ -42,8 +38,11 @@ func testFileBacked(cap int, t *testing.T) {
 		tryOutSide(s, -1, t)
 		tryOutSide(s, cap, t)
 	}
-	f.Close()
-	os.Remove(fileName)
+	s.Close()
+	err := os.Remove(fileName)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestFileSet0(t *testing.T)   { testFileBacked(0, t) }
