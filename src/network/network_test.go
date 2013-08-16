@@ -41,7 +41,40 @@ func TestSplitLocalSummable(t *testing.T) {
 				}
 			}
 		}
-
 	}
+}
 
+type lrTest struct {
+	height  hashtree.Level
+	from    hashtree.Nodes
+	length  hashtree.Nodes
+	e_level hashtree.Level
+	e_node  hashtree.Nodes
+}
+
+var lrData = []lrTest{
+	{0, 0, 1, 0, 0},
+	{1, 0, 1, 1, 0},
+	{0, 1, 1, 0, 1},
+	{0, 2, 1, 0, 2},
+
+	{0, 0, 2, 1, 0},
+	{0, 0, 3, 2, 0},
+	{1, 0, 4, 3, 0},
+	{1, 0, 5, 4, 0},
+
+	{10, 8, 2, 11, 4},
+	{10, 8, 3, 12, 2},
+	{10, 8, 4, 12, 2},
+	{10, 8, 5, 13, 1},
+}
+
+func TestLocalRoot(t *testing.T) {
+	for _, v := range lrData {
+		inner := NewInnerHashes(v.height, v.from, v.length, nil)
+		l, n := inner.LocalRoot()
+		if l != v.e_level || n != v.e_node {
+			t.Errorf("test:%v, got level:%v, and node:%v", v, l, n)
+		}
+	}
 }

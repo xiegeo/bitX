@@ -23,6 +23,18 @@ func (id *StaticId) WidthForLevelOf(in *InnerHashes) hashtree.Nodes {
 	return hashtree.LevelWidth(id.Blocks(), hashtree.Level(in.GetHeight()))
 }
 
+func NewInnerHashes(height hashtree.Level, from hashtree.Nodes, length hashtree.Nodes, bytes []byte) *InnerHashes {
+	h := int32(height)
+	f := int32(from)
+	l := int32(length)
+	return &InnerHashes{
+		Height: &h,
+		From:   &f,
+		Length: &l,
+		Hashes: bytes,
+	}
+}
+
 func (in *InnerHashes) CheckWellFormedForId(id *StaticId) error {
 	if in.GetFrom() < 0 {
 		return fmt.Errorf("from %v is less than 0", in.GetFrom())
@@ -31,7 +43,7 @@ func (in *InnerHashes) CheckWellFormedForId(id *StaticId) error {
 		return fmt.Errorf("reported length %v blocks != length of data %v bytes", in.GetLength(), len(in.GetHashes()))
 	}
 	width := id.WidthForLevelOf(in)
-	if in.GetFrom()+in.GetLength() > int32(width) {
+	if in.GetFromN()+in.GetLengthN() > width {
 		return fmt.Errorf("hash form %v for %v is longer than width of %v", in.GetFrom(), in.GetLength(), width)
 	}
 
@@ -39,11 +51,31 @@ func (in *InnerHashes) CheckWellFormedForId(id *StaticId) error {
 	return nil
 }
 
-//
 func (in *InnerHashes) LocalSum() []byte {
 	c := hashtree.NewNoPadTree()
 	c.Write(in.GetHashes())
 	return c.Sum(nil)
+}
+
+func (in *InnerHashes) GetHeightL() hashtree.Level {
+	return hashtree.Level(in.GetHeight())
+}
+func (in *InnerHashes) GetLengthN() hashtree.Nodes {
+	return hashtree.Nodes(in.GetLength())
+}
+
+func (in *InnerHashes) GetFromN() hashtree.Nodes {
+	return hashtree.Nodes(in.GetFrom())
+}
+
+func (in *InnerHashes) LocalRoot() (level hashtree.Level, node hashtree.Nodes) {
+	h := in.GetHeightL()
+	f := in.GetFromN()
+	l := in.GetLengthN()
+	n := hashtree.Levels(l) - 1
+	level = h + n
+	node = f >> uint32(n)
+	return
 }
 
 func logb(n hashtree.Nodes) hashtree.Nodes {
@@ -73,15 +105,8 @@ func expb(n hashtree.Nodes) hashtree.Nodes {
 }
 
 func (in *InnerHashes) Part(from hashtree.Nodes, to hashtree.Nodes) *InnerHashes {
-	h := in.GetHeight()
-	f := int32(from)
-	l := int32(to - from)
-	return &InnerHashes{
-		Height: &h,
-		From:   &f,
-		Length: &l,
-		Hashes: in.Hashes[(int32(from)-in.GetFrom())*hashtree.HASH_BYTES : (to-from)*hashtree.HASH_BYTES],
-	}
+	return NewInnerHashes(in.GetHeightL(), from, to-from,
+		in.Hashes[(from-in.GetFromN())*hashtree.HASH_BYTES:(to-from)*hashtree.HASH_BYTES])
 }
 
 func (in *InnerHashes) Parts(l [][2]hashtree.Nodes) []*InnerHashes {
