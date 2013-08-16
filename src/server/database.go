@@ -214,3 +214,9 @@ func (d *simpleDatabase) hashFileNameForId(id network.StaticId) string {
 func (d *simpleDatabase) partFileNameForId(id network.StaticId) string {
 	return fmt.Sprintf("%s/P-%s", d.datafolder.Name(), id.CompactId())
 }
+func (d *simpleDatabase) haveHashNameForId(id network.StaticId) string {
+	return fmt.Sprintf("%s/hH-%s", d.datafolder.Name(), id.CompactId())
+}
+func (d *simpleDatabase) havePartNameForId(id network.StaticId) string {
+	return fmt.Sprintf("%s/hP-%s", d.datafolder.Name(), id.CompactId())
+}
