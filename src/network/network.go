@@ -35,6 +35,17 @@ func NewInnerHashes(height hashtree.Level, from hashtree.Nodes, length hashtree.
 	}
 }
 
+func (in *InnerHashes) GetHeightL() hashtree.Level {
+	return hashtree.Level(in.GetHeight())
+}
+func (in *InnerHashes) GetLengthN() hashtree.Nodes {
+	return hashtree.Nodes(in.GetLength())
+}
+
+func (in *InnerHashes) GetFromN() hashtree.Nodes {
+	return hashtree.Nodes(in.GetFrom())
+}
+
 func (in *InnerHashes) CheckWellFormedForId(id *StaticId) error {
 	if in.GetFrom() < 0 {
 		return fmt.Errorf("from %v is less than 0", in.GetFrom())
@@ -51,23 +62,16 @@ func (in *InnerHashes) CheckWellFormedForId(id *StaticId) error {
 	return nil
 }
 
+//Only use under SplitLocalSummable.
+//Get the bytes of the local root sum.
 func (in *InnerHashes) LocalSum() []byte {
 	c := hashtree.NewNoPadTree()
 	c.Write(in.GetHashes())
 	return c.Sum(nil)
 }
 
-func (in *InnerHashes) GetHeightL() hashtree.Level {
-	return hashtree.Level(in.GetHeight())
-}
-func (in *InnerHashes) GetLengthN() hashtree.Nodes {
-	return hashtree.Nodes(in.GetLength())
-}
-
-func (in *InnerHashes) GetFromN() hashtree.Nodes {
-	return hashtree.Nodes(in.GetFrom())
-}
-
+//Only use under SplitLocalSummable
+//Get the position of the local root sum.
 func (in *InnerHashes) LocalRoot() (level hashtree.Level, node hashtree.Nodes) {
 	h := in.GetHeightL()
 	f := in.GetFromN()
