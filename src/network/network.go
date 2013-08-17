@@ -72,13 +72,18 @@ func (in *InnerHashes) LocalSum() []byte {
 
 //Only use under SplitLocalSummable
 //Get the position of the local root sum.
-func (in *InnerHashes) LocalRoot() (level hashtree.Level, node hashtree.Nodes) {
+func (in *InnerHashes) LocalRoot(leafs hashtree.Nodes) (level hashtree.Level, node hashtree.Nodes) {
 	h := in.GetHeightL()
 	f := in.GetFromN()
 	l := in.GetLengthN()
 	n := hashtree.Levels(l) - 1
 	level = h + n
 	node = f >> uint32(n)
+	for node != 0 && node%2 == 0 && node+1 == hashtree.LevelWidth(leafs, level) {
+		//the node and it's parent have the same hash, the parent is the "better" root
+		level += 1
+		node /= 2
+	}
 	return
 }
 

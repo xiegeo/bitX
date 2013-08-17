@@ -45,6 +45,7 @@ func TestSplitLocalSummable(t *testing.T) {
 }
 
 type lrTest struct {
+	leafs   hashtree.Nodes
 	height  hashtree.Level
 	from    hashtree.Nodes
 	length  hashtree.Nodes
@@ -53,26 +54,26 @@ type lrTest struct {
 }
 
 var lrData = []lrTest{
-	{0, 0, 1, 0, 0},
-	{1, 0, 1, 1, 0},
-	{0, 1, 1, 0, 1},
-	{0, 2, 1, 0, 2},
+	{1, 0, 0, 1, 0, 0},
+	{2, 1, 0, 1, 1, 0},
+	{2, 0, 1, 1, 0, 1},
+	{3, 0, 2, 1, 1, 1}, {4, 0, 2, 1, 0, 2},
 
-	{0, 0, 2, 1, 0},
-	{0, 0, 3, 2, 0},
-	{1, 0, 4, 3, 0},
-	{1, 0, 5, 4, 0},
+	{99, 0, 0, 2, 1, 0},
+	{99, 0, 0, 3, 2, 0},
+	{99, 1, 0, 4, 3, 0},
+	{99, 1, 0, 5, 4, 0},
 
-	{10, 8, 2, 11, 4},
-	{10, 8, 3, 12, 2},
-	{10, 8, 4, 12, 2},
-	{10, 8, 5, 13, 1},
+	{999999, 10, 8, 2, 11, 4},
+	{999999, 10, 8, 3, 12, 2},
+	{999999, 10, 8, 4, 12, 2},
+	{999999, 10, 8, 5, 13, 1},
 }
 
 func TestLocalRoot(t *testing.T) {
 	for _, v := range lrData {
 		inner := NewInnerHashes(v.height, v.from, v.length, nil)
-		l, n := inner.LocalRoot()
+		l, n := inner.LocalRoot(v.leafs)
 		if l != v.e_level || n != v.e_node {
 			t.Errorf("test:%v, got level:%v, and node:%v", v, l, n)
 		}
