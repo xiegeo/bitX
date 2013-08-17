@@ -11,8 +11,8 @@ const (
 
 /*
 FileBackedBitSet assumes that OS intelligently cache file reads,
-and flashes on demand. BitSets are nomally used as metadata, so
-it should only flash after the main data flashes.
+and flushes on demand. BitSets are nomally used as metadata, so
+it should only flash after the main data flushes.
 
 Currently, it appears that file read can be an expansive operation,
 cached or not. A solution is pushed back until usage pattern is
