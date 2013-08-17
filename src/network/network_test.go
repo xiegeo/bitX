@@ -14,17 +14,21 @@ type slsTest struct {
 }
 
 var testdata = []slsTest{
-	{0, 0, 1, nil},
+	{0, 0, 1, [][2]hashtree.Nodes{{0, 0}}},
+	{0, 0, 2, nil},
 	{0, 1, 2, [][2]hashtree.Nodes{{0, 1}}},
 	{0, 2, 3, [][2]hashtree.Nodes{{0, 2}}},
 	{0, 2, 4, [][2]hashtree.Nodes{{0, 1}}},
-	{1, 2, 3, nil},
+	{1, 2, 3, [][2]hashtree.Nodes{{2, 2}}},
+	{1, 2, 4, nil},
 	{0, 3, 4, [][2]hashtree.Nodes{{0, 3}}},
 	{1, 6, 8, [][2]hashtree.Nodes{{2, 3}, {4, 5}}},
 	{1, 9, 10, [][2]hashtree.Nodes{{2, 3}, {4, 7}, {8, 9}}},
 	{2, 5, 10, [][2]hashtree.Nodes{{2, 3}, {4, 5}}},
 	{6, 9, 10, [][2]hashtree.Nodes{{6, 7}, {8, 9}}},
 	{10, 18, 20, [][2]hashtree.Nodes{{10, 11}, {12, 15}, {16, 17}}},
+	{1, 4, 5, [][2]hashtree.Nodes{{2, 3}, {4, 4}}},
+	{1, 4, 6, [][2]hashtree.Nodes{{2, 3}}},
 }
 
 func TestSplitLocalSummable(t *testing.T) {

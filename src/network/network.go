@@ -143,7 +143,15 @@ func shiftsls(sls [][2]hashtree.Nodes, delta hashtree.Nodes) [][2]hashtree.Nodes
 
 func sls(from hashtree.Nodes, to hashtree.Nodes, width hashtree.Nodes) [][2]hashtree.Nodes {
 	from = (from + 1) / 2 * 2
-	if to-from <= 0 {
+	if from > to || to >= width {
+		panic(fmt.Sprintf("from:%v, to:%v, width%v", from, to, width))
+	}
+
+	if from == to {
+		//there souldn't be any singles, unless it is the last one and even
+		if from == width-1 && from%2 == 0 {
+			return [][2]hashtree.Nodes{{from, to}}
+		}
 		return nil
 	}
 	if from == 0 {
