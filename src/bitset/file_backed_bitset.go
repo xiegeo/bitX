@@ -69,7 +69,7 @@ func (b *FileBackedBitSet) locateByteMask(key int) (bucket int, mask byte) {
 	return
 }
 
-func (b *FileBackedBitSet) SetAs(i int, v bool) {
+func (b *FileBackedBitSet) setAs(i int, v bool) {
 	bucket, bit := b.locateChange(i)
 	bmap, ok := b.changes[bucket]
 	if !ok {
@@ -80,11 +80,11 @@ func (b *FileBackedBitSet) SetAs(i int, v bool) {
 }
 
 func (b *FileBackedBitSet) Set(i int) {
-	b.SetAs(i, true)
+	b.setAs(i, true)
 }
 
 func (b *FileBackedBitSet) Unset(i int) {
-	b.SetAs(i, false)
+	b.setAs(i, false)
 }
 
 func (b *FileBackedBitSet) Get(i int) bool {
