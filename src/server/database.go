@@ -208,8 +208,6 @@ func (d *simpleDatabase) StartPart(id network.StaticId) error {
 			return err2
 		}
 		defer hf.Close()
-		leafs := id.Blocks()
-		hf.WriteAt(id.GetHash(), d.hashPosition(leafs, hashtree.Levels(leafs), 0))
 		return nil
 	} else {
 		return ERROR_ALREADY_EXIST
@@ -231,21 +229,49 @@ func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHa
 	hashBuffer := make([]byte, refHash.Size())
 	splited := set.SplitLocalSummable(&id)
 	for _, hashes := range splited {
-		l, n := hashes.LocalRoot()
-		key := int(d.hashNumber(leafs, l, n))
+		rootL, rootN := hashes.LocalRoot(leafs)
+		key := int(d.hashNumber(leafs, rootL, rootN))
 		if key == bits.Capacity() {
 			//this is root
 		} else if !bits.Get(key) {
 			continue // this part of hashes can not be verified, skiped
 		}
 		sum := hashes.LocalSum()
-		off := d.hashPosition(leafs, l, n)
-		if _, err := f.ReadAt(hashBuffer, off); err != nil {
-			panic(err)
+		if key == bits.Capacity() {
+			copy(hashBuffer, id.GetHash())
+		} else {
+			off := d.hashPosition(leafs, rootL, rootN)
+			if _, err := f.ReadAt(hashBuffer, off); err != nil {
+				panic(err)
+			}
 		}
 		if bytes.Equal(sum, hashBuffer) {
-			//verified
-			//todo save
+			//verified, now save
+			listener := func(l hashtree.Level, i hashtree.Nodes, h *hashtree.H256) {
+				realL := set.GetHeightL() + l
+				realN := i >> uint32(l)
+				if realL == rootL {
+					return //don't need the root here, already verified
+				}
+				b := h.ToBytes()
+				off := d.hashPosition(leafs, realL, realN)
+				f.WriteAt(b, off)
+				bits.Set(int(d.hashNumber(leafs, realL, realN)))
+
+				for realL+1 != rootL && realN != 0 && realN%2 == 0 && realN+1 == hashtree.LevelWidth(leafs, realL) {
+					//the node and it's parent have the same hash, so, also write to parent
+					realL += 1
+					realN /= 2
+
+					off = d.hashPosition(leafs, realL, realN)
+					f.WriteAt(b, off)
+					bits.Set(int(d.hashNumber(leafs, realL, realN)))
+				}
+			}
+			hasher := hashtree.NewFile()
+			hasher.SetInnerHashListener(listener)
+			hasher.Write(hashes.GetHashes())
+			hasher.Sum(nil)
 		}
 	}
 	return nil
