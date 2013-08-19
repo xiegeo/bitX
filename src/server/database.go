@@ -35,6 +35,7 @@ type Database interface {
 	StartPart(id network.StaticId) error
 	PutAt(b []byte, id network.StaticId, off hashtree.Bytes) error
 	PutInnerHashes(id network.StaticId, set network.InnerHashes) error
+	Remove(id network.StaticId)
 }
 
 func ImportLocalFile(d Database, location string) (id network.StaticId) {
@@ -132,6 +133,7 @@ func (d *simpleDatabase) ImportFromReader(r io.Reader) network.StaticId {
 	}
 	f.Close()
 	hashFile.Close()
+
 	err = os.Rename(f.Name(), d.fileNameForId(id))
 	if err != nil {
 		if os.IsExist(err) {
@@ -195,6 +197,7 @@ func (d *simpleDatabase) GetInnerHashes(id network.StaticId, req network.InnerHa
 	req.Hashes = b
 	return req, nil
 }
+
 func (d *simpleDatabase) StartPart(id network.StaticId) error {
 	_, err := os.Stat(d.hashFileNameForId(id))
 	if os.IsNotExist(err) {
@@ -275,6 +278,21 @@ func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHa
 		}
 	}
 	return nil
+}
+
+func remove(filename string) {
+	err := os.Remove(filename)
+	if err != nil && !os.IsNotExist(err) {
+		panic(err)
+	}
+}
+
+func (d *simpleDatabase) Remove(id network.StaticId) {
+	remove(d.havePartNameForId(id))
+	remove(d.haveHashNameForId(id))
+	remove(d.partFileNameForId(id))
+	remove(d.fileNameForId(id))
+	remove(d.hashFileNameForId(id))
 }
 
 func (d *simpleDatabase) fileNameForId(id network.StaticId) string {
