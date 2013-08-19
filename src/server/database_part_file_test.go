@@ -37,6 +37,7 @@ func TestPart(t *testing.T) {
 func testPartSize(size hashtree.Bytes, source Database, part Database, t *testing.T) {
 	//create file in source and get it's link
 	id := source.ImportFromReader(&testFile{length: size})
+	t.Logf("id:%v", id.String())
 	if source.GetState(id) != FILE_COMPLETE {
 		t.Fatalf("The source should have this file:%v", id.CompactId())
 	}
@@ -51,7 +52,26 @@ func testPartSize(size hashtree.Bytes, source Database, part Database, t *testin
 	//then test by Put...
 	part.Remove(id)
 	testPartStart(part, id, t)
-	//todo
+	leafs := hashtree.FileNodesDefault(size)
+	req := network.NewInnerHashes(0, 0, leafs, nil)
+	if leafs == 1 {
+		req = network.NewInnerHashes(0, 0, 0, nil)
+	}
+
+	t.Logf("req:%v", req.String())
+	hashes, err := source.GetInnerHashes(id, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("hashes:%v", hashes.String())
+	complete, err2 := part.PutInnerHashes(id, hashes)
+	if err2 != nil {
+		t.Fatal(err2)
+	}
+	if !complete {
+		t.Fatal("should have put all inner hashes in")
+	}
+
 }
 
 func testPartStart(part Database, id network.StaticId, t *testing.T) {

@@ -107,7 +107,9 @@ func (d *simpleDatabase) innerHashListenerFile(hasher hashtree.HashTree, len has
 		}
 		b := h.ToBytes()
 		off := d.hashPosition(leafs, l, i)
-		file.WriteAt(b, off)
+		if _, err := file.WriteAt(b, off); err != nil {
+			panic(err)
+		}
 	}
 	hasher.SetInnerHashListener(listener)
 	return file
@@ -177,13 +179,15 @@ func (d *simpleDatabase) GetAt(b []byte, id network.StaticId, off hashtree.Bytes
 }
 
 func (d *simpleDatabase) GetInnerHashes(id network.StaticId, req network.InnerHashes) (network.InnerHashes, error) {
-	leaf := refHash.Nodes(hashtree.Bytes(id.GetLength()))
+	leafs := refHash.Nodes(hashtree.Bytes(id.GetLength()))
 	level := hashtree.Level(req.GetHeight())
 	from := hashtree.Nodes(req.GetFrom())
 	nodes := hashtree.Nodes(req.GetLength())
-	if level < d.lowestInnerHashes {
+	if nodes == 0 {
+		return req, nil //nothing was requested
+	} else if level < d.lowestInnerHashes {
 		return req, ERROR_LEVEL_LOW
-	} else if from+nodes > refHash.LevelWidth(leaf, level) {
+	} else if level >= refHash.Levels(leafs)-1 || from+nodes > refHash.LevelWidth(leafs, level) {
 		return req, ERROR_INDEX_OFF
 	}
 	f, err := os.Open(d.hashFileNameForId(id))
@@ -191,9 +195,11 @@ func (d *simpleDatabase) GetInnerHashes(id network.StaticId, req network.InnerHa
 		return req, ERROR_NOT_LOCAL
 	}
 	defer f.Close()
-	off := d.hashPosition(leaf, level, from)
+	off := d.hashPosition(leafs, level, from)
 	b := make([]byte, refHash.Size()*int(nodes))
-	f.ReadAt(b, off)
+	if _, err := f.ReadAt(b, off); err != nil {
+		panic(err)
+	}
 	req.Hashes = b
 	return req, nil
 }
@@ -224,7 +230,7 @@ func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHa
 	leafs := id.Blocks()
 	bits := bitset.OpenCountingFileBacked(d.haveHashNameForId(id), int(d.hashTopNumber(leafs)-1))
 	defer bits.Close()
-	f, err := os.Open(d.hashFileNameForId(id))
+	f, err := os.OpenFile(d.hashFileNameForId(id), os.O_RDWR, 0666)
 	if err != nil {
 		return false, ERROR_NOT_LOCAL
 	}
@@ -252,26 +258,19 @@ func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHa
 			//verified, now save
 			listener := func(l hashtree.Level, i hashtree.Nodes, h *hashtree.H256) {
 				realL := set.GetHeightL() + l
-				realN := i >> uint32(l)
+				realN := i + rootN<<uint32(rootL-l)
 				if realL == rootL {
 					return //don't need the root here, already verified
 				}
 				b := h.ToBytes()
 				off := d.hashPosition(leafs, realL, realN)
-				f.WriteAt(b, off)
-				bits.Set(int(d.hashNumber(leafs, realL, realN)))
-
-				for realL+1 != rootL && realN != 0 && realN%2 == 0 && realN+1 == hashtree.LevelWidth(leafs, realL) {
-					//the node and it's parent have the same hash, so, also write to parent
-					realL += 1
-					realN /= 2
-
-					off = d.hashPosition(leafs, realL, realN)
-					f.WriteAt(b, off)
-					bits.Set(int(d.hashNumber(leafs, realL, realN)))
+				if _, err := f.WriteAt(b, off); err != nil {
+					panic(err)
 				}
+				n := int(d.hashNumber(leafs, realL, realN))
+				bits.Set(n)
 			}
-			hasher := hashtree.NewFile()
+			hasher := hashtree.NewTree()
 			hasher.SetInnerHashListener(listener)
 			hasher.Write(hashes.GetHashes())
 			hasher.Sum(nil)
