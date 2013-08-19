@@ -87,6 +87,10 @@ func (c *CountingFileBackedBitSet) Count() int {
 	return int(c.count)
 }
 
+func (c *CountingFileBackedBitSet) Full() bool {
+	return c.Count() == c.Capacity()
+}
+
 func (c *CountingFileBackedBitSet) Set(i int) {
 	if c.Get(i) {
 		return
