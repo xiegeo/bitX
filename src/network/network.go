@@ -23,11 +23,11 @@ func (id *StaticId) WidthForLevelOf(in *InnerHashes) hashtree.Nodes {
 	return hashtree.LevelWidth(id.Blocks(), hashtree.Level(in.GetHeight()))
 }
 
-func NewInnerHashes(height hashtree.Level, from hashtree.Nodes, length hashtree.Nodes, bytes []byte) *InnerHashes {
+func NewInnerHashes(height hashtree.Level, from hashtree.Nodes, length hashtree.Nodes, bytes []byte) InnerHashes {
 	h := int32(height)
 	f := int32(from)
 	l := int32(length)
-	return &InnerHashes{
+	return InnerHashes{
 		Height: &h,
 		From:   &f,
 		Length: &l,
@@ -113,13 +113,13 @@ func expb(n hashtree.Nodes) hashtree.Nodes {
 	return i
 }
 
-func (in *InnerHashes) Part(from hashtree.Nodes, to hashtree.Nodes) *InnerHashes {
+func (in *InnerHashes) Part(from hashtree.Nodes, to hashtree.Nodes) InnerHashes {
 	return NewInnerHashes(in.GetHeightL(), from, to-from,
 		in.Hashes[(from-in.GetFromN())*hashtree.HASH_BYTES:(to-from)*hashtree.HASH_BYTES])
 }
 
-func (in *InnerHashes) Parts(l [][2]hashtree.Nodes) []*InnerHashes {
-	r := make([]*InnerHashes, len(l))
+func (in *InnerHashes) Parts(l [][2]hashtree.Nodes) []InnerHashes {
+	r := make([]InnerHashes, len(l))
 	for _, v := range l {
 		r = append(r, in.Part(v[0], v[1]))
 	}
@@ -176,7 +176,7 @@ func sls(from hashtree.Nodes, to hashtree.Nodes, width hashtree.Nodes) [][2]hash
 	}
 }
 
-func (in *InnerHashes) SplitLocalSummable(id *StaticId) []*InnerHashes {
+func (in *InnerHashes) SplitLocalSummable(id *StaticId) []InnerHashes {
 	if err := in.CheckWellFormedForId(id); err != nil {
 		panic(err)
 	}
