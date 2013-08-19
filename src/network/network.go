@@ -180,6 +180,6 @@ func (in *InnerHashes) SplitLocalSummable(id *StaticId) []InnerHashes {
 	if err := in.CheckWellFormedForId(id); err != nil {
 		panic(err)
 	}
-	ranges := sls(hashtree.Nodes(in.GetFrom()), hashtree.Nodes(in.GetFrom()+in.GetLength()), id.WidthForLevelOf(in))
+	ranges := sls(hashtree.Nodes(in.GetFrom()), hashtree.Nodes(in.GetFrom()+in.GetLength()) - 1, id.WidthForLevelOf(in))
 	return in.Parts(ranges)
 }
