@@ -222,7 +222,7 @@ func (d *simpleDatabase) PutAt(b []byte, id network.StaticId, off hashtree.Bytes
 }
 func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHashes) error {
 	leafs := id.Blocks()
-	bits := bitset.OpenFileBacked(d.haveHashNameForId(id), int(d.hashTopNumber(leafs)-1))
+	bits := bitset.OpenCountingFileBacked(d.haveHashNameForId(id), int(d.hashTopNumber(leafs)-1))
 	defer bits.Close()
 	f, err := os.Open(d.hashFileNameForId(id))
 	if err != nil {
