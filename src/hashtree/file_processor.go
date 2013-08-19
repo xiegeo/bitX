@@ -34,6 +34,10 @@ func NewFile2(leafBlockSize int, leaf hash.Hash, tree CopyableHashTree) HashTree
 	return d
 }
 
+func FileNodesDefault(len Bytes) Nodes {
+	return FileNodes(len, FILE_BLOCK_SIZE)
+}
+
 func FileNodes(len Bytes, blockSize Bytes) Nodes {
 	if len == 0 {
 		return 1
