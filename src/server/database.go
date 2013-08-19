@@ -34,7 +34,7 @@ type Database interface {
 	GetInnerHashes(id network.StaticId, req network.InnerHashes) (network.InnerHashes, error)
 	StartPart(id network.StaticId) error
 	PutAt(b []byte, id network.StaticId, off hashtree.Bytes) error
-	PutInnerHashes(id network.StaticId, set network.InnerHashes) error
+	PutInnerHashes(id network.StaticId, set network.InnerHashes) (bool, error)
 	Remove(id network.StaticId)
 }
 
@@ -220,13 +220,13 @@ func (d *simpleDatabase) StartPart(id network.StaticId) error {
 func (d *simpleDatabase) PutAt(b []byte, id network.StaticId, off hashtree.Bytes) error {
 	return nil
 }
-func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHashes) error {
+func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHashes) (complete bool, err error) {
 	leafs := id.Blocks()
 	bits := bitset.OpenCountingFileBacked(d.haveHashNameForId(id), int(d.hashTopNumber(leafs)-1))
 	defer bits.Close()
 	f, err := os.Open(d.hashFileNameForId(id))
 	if err != nil {
-		return ERROR_NOT_LOCAL
+		return false, ERROR_NOT_LOCAL
 	}
 	defer f.Close()
 	hashBuffer := make([]byte, refHash.Size())
@@ -277,7 +277,7 @@ func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHa
 			hasher.Sum(nil)
 		}
 	}
-	return nil
+	return bits.Full(), nil
 }
 
 func remove(filename string) {
