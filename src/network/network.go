@@ -114,12 +114,13 @@ func expb(n hashtree.Nodes) hashtree.Nodes {
 }
 
 func (in *InnerHashes) Part(from hashtree.Nodes, to hashtree.Nodes) InnerHashes {
-	return NewInnerHashes(in.GetHeightL(), from, to-from,
-		in.Hashes[(from-in.GetFromN())*hashtree.HASH_BYTES:(to-from)*hashtree.HASH_BYTES])
+	length := to - from + 1
+	return NewInnerHashes(in.GetHeightL(), from, length,
+		in.Hashes[(from-in.GetFromN())*hashtree.HASH_BYTES:(length)*hashtree.HASH_BYTES])
 }
 
 func (in *InnerHashes) Parts(l [][2]hashtree.Nodes) []InnerHashes {
-	r := make([]InnerHashes, len(l))
+	r := make([]InnerHashes, 0, len(l))
 	for _, v := range l {
 		r = append(r, in.Part(v[0], v[1]))
 	}
@@ -141,10 +142,19 @@ func shiftsls(sls [][2]hashtree.Nodes, delta hashtree.Nodes) [][2]hashtree.Nodes
 	return sls
 }
 
+// the input maybe gernerated by an adversary, return nil instead of panic that check coding errors
+func slsUntrusted(from hashtree.Nodes, to hashtree.Nodes, width hashtree.Nodes) [][2]hashtree.Nodes {
+	if from > to || to >= width {
+		return nil
+	} else {
+		return sls(from, to, width)
+	}
+}
+
 func sls(from hashtree.Nodes, to hashtree.Nodes, width hashtree.Nodes) [][2]hashtree.Nodes {
 	from = (from + 1) / 2 * 2
 	if from > to || to >= width {
-		panic(fmt.Sprintf("from:%v, to:%v, width%v", from, to, width))
+		panic(fmt.Sprintf("from:%v, to:%v, width:%v", from, to, width))
 	}
 
 	if from == to {
@@ -180,6 +190,6 @@ func (in *InnerHashes) SplitLocalSummable(id *StaticId) []InnerHashes {
 	if err := in.CheckWellFormedForId(id); err != nil {
 		panic(err)
 	}
-	ranges := sls(hashtree.Nodes(in.GetFrom()), hashtree.Nodes(in.GetFrom()+in.GetLength()) - 1, id.WidthForLevelOf(in))
+	ranges := slsUntrusted(hashtree.Nodes(in.GetFrom()), hashtree.Nodes(in.GetFrom()+in.GetLength())-1, id.WidthForLevelOf(in))
 	return in.Parts(ranges)
 }
