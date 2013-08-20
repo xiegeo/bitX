@@ -115,8 +115,9 @@ func expb(n hashtree.Nodes) hashtree.Nodes {
 
 func (in *InnerHashes) Part(from hashtree.Nodes, to hashtree.Nodes) InnerHashes {
 	length := to - from + 1
+	hashStart := from - in.GetFromN()
 	return NewInnerHashes(in.GetHeightL(), from, length,
-		in.Hashes[(from-in.GetFromN())*hashtree.HASH_BYTES:(length)*hashtree.HASH_BYTES])
+		in.Hashes[hashStart*hashtree.HASH_BYTES:(hashStart+length)*hashtree.HASH_BYTES])
 }
 
 func (in *InnerHashes) Parts(l [][2]hashtree.Nodes) []InnerHashes {
