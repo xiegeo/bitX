@@ -23,6 +23,8 @@ func TestPart(t *testing.T) {
 	test(12345)
 }
 
+
+
 func testSetUp(t *testing.T) (source Database, part Database) {
 	sourceDatabase := ".testSourceDatabase"
 	partDatabase := ".testPartDatabase"
@@ -69,7 +71,7 @@ func testPartSize(size hashtree.Bytes, source Database, part Database, t *testin
 		t.Fatal(err)
 	}
 	t.Logf("hashes:%v", hashes.String())
-	complete, err2 := part.PutInnerHashes(id, hashes)
+	_, complete, err2 := part.PutInnerHashes(id, hashes)
 	if err2 != nil {
 		t.Fatal(err2)
 	}
