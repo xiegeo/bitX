@@ -10,18 +10,7 @@ import (
 )
 
 func TestPart(t *testing.T) {
-	sourceDatabase := ".testSourceDatabase"
-	partDatabase := ".testPartDatabase"
-	err := os.RemoveAll(sourceDatabase)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.RemoveAll(partDatabase)
-	if err != nil {
-		t.Fatal(err)
-	}
-	source := OpenSimpleDatabase(sourceDatabase, testLevelLow)
-	part := OpenSimpleDatabase(partDatabase, testLevelLow)
+	source, part := testSetUp(t)
 
 	test := func(size hashtree.Bytes) {
 		testPartSize(size, source, part, t)
@@ -32,6 +21,22 @@ func TestPart(t *testing.T) {
 	test(1025)
 	test(2345)
 	test(12345)
+}
+
+func testSetUp(t *testing.T) (source Database, part Database) {
+	sourceDatabase := ".testSourceDatabase"
+	partDatabase := ".testPartDatabase"
+	err := os.RemoveAll(sourceDatabase)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.RemoveAll(partDatabase)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source = OpenSimpleDatabase(sourceDatabase, testLevelLow)
+	part = OpenSimpleDatabase(partDatabase, testLevelLow)
+	return
 }
 
 func testPartSize(size hashtree.Bytes, source Database, part Database, t *testing.T) {
