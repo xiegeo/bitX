@@ -34,8 +34,9 @@ type Database interface {
 	GetInnerHashes(id network.StaticId, req network.InnerHashes) (network.InnerHashes, error)
 	StartPart(id network.StaticId) error
 	PutAt(b []byte, id network.StaticId, off hashtree.Bytes) error
-	PutInnerHashes(id network.StaticId, set network.InnerHashes) (hashtree.Nodes ,bool, error)
+	PutInnerHashes(id network.StaticId, set network.InnerHashes) (has hashtree.Nodes, complete bool, err error)
 	Remove(id network.StaticId)
+	Close()
 }
 
 func ImportLocalFile(d Database, location string) (id network.StaticId) {
@@ -65,6 +66,14 @@ func OpenSimpleDatabase(dirname string, lowestInnerHashes hashtree.Level) Databa
 	}
 
 	return d
+}
+
+func (d *simpleDatabase) Close() {
+	err := d.datafolder.Close()
+	if err != nil {
+		panic(err)
+	}
+	d.datafolder = nil
 }
 
 func (d *simpleDatabase) LowestInnerHashes() hashtree.Level {
