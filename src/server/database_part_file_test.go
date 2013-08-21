@@ -40,10 +40,10 @@ func TestPartOutOfOrder(t *testing.T) {
 	testData := []testPOOO{
 		{network.NewInnerHashes(0, 0, 5, nil), 0},         //nothing can be verified
 		{network.NewInnerHashes(0, 1, 5, nil), 0},         //nothing can be verified
-		{network.NewInnerHashes(2, 0, 2, nil), 2},         //top two
-		{network.NewInnerHashes(0, 1, 5, nil), 2 + 3},     //plus the last two and parent, 1 to 3 lost
-		{network.NewInnerHashes(0, 0, 3, nil), 2 + 3},     //but nothing here
-		{network.NewInnerHashes(0, 0, 4, nil), 2 + 3 + 6}, //finnally
+		{network.NewInnerHashes(2, 0, 2, nil), 3},         //top two, with one propergated down
+		{network.NewInnerHashes(0, 1, 5, nil), 3 + 2},     //plus the last two, 1 to 3 lost
+		{network.NewInnerHashes(0, 0, 3, nil), 3 + 2},     //but nothing here
+		{network.NewInnerHashes(0, 0, 4, nil), 3 + 2 + 6}, //finnally
 	}
 	for _, v := range testData {
 		n, _, err := testTransfer(v.req, id, source, part, t)

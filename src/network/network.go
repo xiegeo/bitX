@@ -79,11 +79,6 @@ func (in *InnerHashes) LocalRoot(leafs hashtree.Nodes) (level hashtree.Level, no
 	n := hashtree.Levels(l) - 1
 	level = h + n
 	node = f >> uint32(n)
-	for node != 0 && node%2 == 0 && node+1 == hashtree.LevelWidth(leafs, level) {
-		//the node and it's parent have the same hash, the parent is the "better" root
-		level += 1
-		node /= 2
-	}
 	return
 }
 

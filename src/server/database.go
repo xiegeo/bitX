@@ -235,6 +235,7 @@ func (d *simpleDatabase) StartPart(id network.StaticId) error {
 func (d *simpleDatabase) PutAt(b []byte, id network.StaticId, off hashtree.Bytes) error {
 	return nil
 }
+
 func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHashes) (has hashtree.Nodes, complete bool, err error) {
 	leafs := id.Blocks()
 	bits := bitset.OpenCountingFileBacked(d.haveHashNameForId(id), int(d.hashTopNumber(leafs)-1))
@@ -244,6 +245,16 @@ func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHa
 		return 0, false, ERROR_NOT_LOCAL
 	}
 	defer f.Close()
+
+	writeHash := func(realL hashtree.Level, realN hashtree.Nodes, b []byte) {
+		off := d.hashPosition(leafs, realL, realN)
+		if _, err := f.WriteAt(b, off); err != nil {
+			panic(err)
+		}
+		n := int(d.hashNumber(leafs, realL, realN))
+		bits.Set(n)
+	}
+
 	hashBuffer := make([]byte, refHash.Size())
 	splited := set.SplitLocalSummable(&id)
 	for _, hashes := range splited {
@@ -272,12 +283,17 @@ func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHa
 					return //don't need the root here, already verified
 				}
 				b := h.ToBytes()
-				off := d.hashPosition(leafs, realL, realN)
-				if _, err := f.WriteAt(b, off); err != nil {
-					panic(err)
+				writeHash(realL, realN, b)
+
+				//propagate down nodes with single branch
+				for realL > d.LowestInnerHashes() &&
+					realN+1 == hashtree.LevelWidth(leafs, realL) &&
+					hashtree.LevelWidth(leafs, realL-1)%2 == 1 {
+
+					realL--
+					realN = hashtree.LevelWidth(leafs, realL) - 1
+					writeHash(realL, realN, b)
 				}
-				n := int(d.hashNumber(leafs, realL, realN))
-				bits.Set(n)
 			}
 			hasher := hashtree.NewTree()
 			hasher.SetInnerHashListener(listener)
