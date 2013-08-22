@@ -14,6 +14,7 @@ import (
 )
 
 var ERROR_NOT_LOCAL = errors.New("file is not locally available")
+var ERROR_NOT_PART = errors.New("file is not downloading")
 var ERROR_LEVEL_LOW = errors.New("the inner hash level is lower than cached")
 var ERROR_INDEX_OFF = errors.New("the index of inner hashes is out of range for file of this size")
 var ERROR_ALREADY_EXIST = errors.New("the thing was already added or started")
@@ -33,7 +34,7 @@ type Database interface {
 	GetAt(b []byte, id network.StaticId, off hashtree.Bytes) (int, error)
 	GetInnerHashes(id network.StaticId, req network.InnerHashes) (network.InnerHashes, error)
 	StartPart(id network.StaticId) error
-	PutAt(b []byte, id network.StaticId, off hashtree.Bytes) error
+	PutAt(b []byte, id network.StaticId, off hashtree.Bytes) (has hashtree.Nodes, complete bool, err error)
 	PutInnerHashes(id network.StaticId, set network.InnerHashes) (has hashtree.Nodes, complete bool, err error)
 	Remove(id network.StaticId)
 	Close()
@@ -232,19 +233,67 @@ func (d *simpleDatabase) StartPart(id network.StaticId) error {
 	}
 
 }
-func (d *simpleDatabase) PutAt(b []byte, id network.StaticId, off hashtree.Bytes) error {
-	return nil
+func (d *simpleDatabase) PutAt(b []byte, id network.StaticId, off hashtree.Bytes) (has hashtree.Nodes, complete bool, err error) {
+	blocks := id.Blocks()
+	f, err := os.OpenFile(d.partFileNameForId(id), os.O_RDWR, 0666)
+	if err != nil {
+		return 0, false, ERROR_NOT_PART
+	}
+	defer f.Close()
+	bits := bitset.OpenCountingFileBacked(d.havePartNameForId(id), int(blocks))
+	defer bits.Close()
+
+	if off%hashtree.FILE_BLOCK_SIZE != 0 {
+		panic("offset must start from a block")
+	}
+	startingNode := hashtree.Nodes(off / hashtree.FILE_BLOCK_SIZE)
+
+	if off >= id.Bytes() {
+		b = nil
+	} else if off+hashtree.Bytes(len(b)) >= id.Bytes() {
+		b = b[:id.Bytes()-off]
+	}
+	bLen := hashtree.Bytes(len(b))
+
+	hash := hashtree.NewFile()
+
+	for i := hashtree.Bytes(0); i < bLen; i += hashtree.FILE_BLOCK_SIZE {
+		end := i + hashtree.FILE_BLOCK_SIZE
+		if end > bLen {
+			end = bLen
+		}
+		partData := b[i:end]
+		hash.Write(partData)
+		sum := hash.Sum(nil)
+		hash.Reset()
+		nthBlock := startingNode + hashtree.Nodes(i/hashtree.FILE_BLOCK_SIZE)
+		exp, err := d.GetInnerHashes(id, network.NewInnerHashes(0, nthBlock, 1, nil))
+		if err != nil {
+			panic(err)
+		}
+		if bytes.Equal(exp.GetHashes(), sum) {
+			_, err := f.WriteAt(partData, int64(nthBlock*hashtree.FILE_BLOCK_SIZE))
+			if err != nil {
+				panic(err)
+			}
+			bits.Set(int(nthBlock))
+		}
+	}
+	if bits.Full() {
+		//todo: move file to completed
+	}
+	return hashtree.Nodes(bits.Count()), bits.Full(), nil
 }
 
 func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHashes) (has hashtree.Nodes, complete bool, err error) {
 	leafs := id.Blocks()
-	bits := bitset.OpenCountingFileBacked(d.haveHashNameForId(id), int(d.hashTopNumber(leafs)-1))
-	defer bits.Close()
 	f, err := os.OpenFile(d.hashFileNameForId(id), os.O_RDWR, 0666)
 	if err != nil {
-		return 0, false, ERROR_NOT_LOCAL
+		return 0, false, ERROR_NOT_PART
 	}
 	defer f.Close()
+	bits := bitset.OpenCountingFileBacked(d.haveHashNameForId(id), int(d.hashTopNumber(leafs)-1))
+	defer bits.Close()
 
 	writeHash := func(realL hashtree.Level, realN hashtree.Nodes, b []byte) {
 		off := d.hashPosition(leafs, realL, realN)
