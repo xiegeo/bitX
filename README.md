@@ -31,8 +31,8 @@ Idea
 
 To build a distributed data cache.
 
-* Static data is referenced by hash+length. Large data blocks uses tree hash to aid in multi-source download and error recovery. The tree structure determined by length.
-* Dynamic data is referenced by public key, data with a higher version number replaces older data. This update channel is protected by securing the private key.
+* Static data is referenced by hash+length. Large data blocks uses tree hash to aid in multi-source download and error recovery. The tree structure is determined by length only.
+* Dynamic data is referenced and signed by public key, data with a higher version number replaces older data. This update channel is protected by securing the private key.
 * There for, any data can be verified using the hashes and keys, allowing anyone to distribute data.
 
 Then different applications can be build using those services.
