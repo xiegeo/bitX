@@ -11,6 +11,8 @@ import (
 
 func TestPart(t *testing.T) {
 	source, part := testSetUp(t)
+	defer source.Close()
+	defer part.Close()
 
 	test := func(size hashtree.Bytes) {
 		testPartSize(size, source, part, t)
@@ -21,23 +23,22 @@ func TestPart(t *testing.T) {
 	test(1025)
 	test(2345)
 	test(12345)
-
-	source.Close()
-	part.Close()
 }
 
-type testPOOO struct {
+type testHashReq struct {
 	req   network.InnerHashes
 	count hashtree.Nodes
 }
 
 func TestPartOutOfOrder(t *testing.T) {
 	source, part := testSetUp(t)
+	defer source.Close()
+	defer part.Close()
 
 	id := source.ImportFromReader(&testFile{length: 6 * hashtree.FILE_BLOCK_SIZE})
 	testPartStart(part, id, t)
 
-	testData := []testPOOO{
+	testData := []testHashReq{
 		{network.NewInnerHashes(0, 0, 5, nil), 0},         //nothing can be verified
 		{network.NewInnerHashes(0, 1, 5, nil), 0},         //nothing can be verified
 		{network.NewInnerHashes(2, 0, 2, nil), 3},         //top two, with one propergated down
@@ -46,7 +47,7 @@ func TestPartOutOfOrder(t *testing.T) {
 		{network.NewInnerHashes(0, 0, 4, nil), 3 + 2 + 6}, //finnally
 	}
 	for _, v := range testData {
-		n, _, err := testTransfer(v.req, id, source, part, t)
+		n, _, err := testTransferHash(v.req, id, source, part, t)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -54,9 +55,6 @@ func TestPartOutOfOrder(t *testing.T) {
 			t.Fatalf("count got:%v, should be %v, for test:%v", n, v.count, v.req.String())
 		}
 	}
-
-	source.Close()
-	part.Close()
 }
 
 func testSetUp(t *testing.T) (source Database, part Database) {
@@ -98,14 +96,27 @@ func testPartSize(size hashtree.Bytes, source Database, part Database, t *testin
 	if leafs == 1 {
 		req = network.NewInnerHashes(0, 0, 0, nil)
 	}
-	_, complete, _ := testTransfer(req, id, source, part, t)
+	_, complete, _ := testTransferHash(req, id, source, part, t)
 	if !complete {
 		t.Fatal("should have put all inner hashes in")
 	}
 
+	data := make([]byte, id.GetLength())
+	_, err := source.GetAt(data, id, 0)
+	if err != nil {
+		t.Fatalf("can't get from source:%v", err)
+	}
+
+	has, comp, err := part.PutAt(data, id, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !comp || has != leafs {
+		t.Fatalf("complete:%v, %v/%v", comp, has, leafs)
+	}
 }
 
-func testTransfer(req network.InnerHashes, id network.StaticId, source Database, part Database, t *testing.T) (has hashtree.Nodes, complete bool, err error) {
+func testTransferHash(req network.InnerHashes, id network.StaticId, source Database, part Database, t *testing.T) (has hashtree.Nodes, complete bool, err error) {
 	t.Logf("req:%v", req.String())
 	hashes, err := source.GetInnerHashes(id, req)
 	if err != nil {

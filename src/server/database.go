@@ -198,8 +198,11 @@ func (d *simpleDatabase) GetInnerHashes(id network.StaticId, req network.InnerHa
 		return req, nil //nothing was requested
 	} else if level < d.lowestInnerHashes {
 		return req, ERROR_LEVEL_LOW
-	} else if level >= refHash.Levels(leafs)-1 || from+nodes > refHash.LevelWidth(leafs, level) {
+	} else if level >= refHash.Levels(leafs) || from+nodes > refHash.LevelWidth(leafs, level) {
 		return req, ERROR_INDEX_OFF
+	} else if level == refHash.Levels(leafs)-1 {
+		req.Hashes = id.Hash
+		return req, nil
 	}
 	f, err := os.Open(d.hashFileNameForId(id))
 	if err != nil {
@@ -258,7 +261,8 @@ func (d *simpleDatabase) PutAt(b []byte, id network.StaticId, off hashtree.Bytes
 
 	hash := hashtree.NewFile()
 
-	for i := hashtree.Bytes(0); i < bLen; i += hashtree.FILE_BLOCK_SIZE {
+	for i := hashtree.Bytes(0); i < bLen || off+i == 0; i += hashtree.FILE_BLOCK_SIZE {
+		// off+i == 0 is a special case for the empty file
 		end := i + hashtree.FILE_BLOCK_SIZE
 		if end > bLen {
 			end = bLen
