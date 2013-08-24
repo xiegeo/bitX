@@ -31,7 +31,7 @@ type Database interface {
 	LowestInnerHashes() hashtree.Level
 	ImportFromReader(r io.Reader) network.StaticId
 	GetState(id network.StaticId) FileState
-	GetAt(b []byte, id network.StaticId, off hashtree.Bytes) (int, error)
+	GetAt(b []byte, id network.StaticId, off hashtree.Bytes) (hashtree.Bytes, error)
 	GetInnerHashes(id network.StaticId, req network.InnerHashes) (network.InnerHashes, error)
 	StartPart(id network.StaticId) error
 	PutAt(b []byte, id network.StaticId, off hashtree.Bytes) (has hashtree.Nodes, complete bool, err error)
@@ -179,13 +179,14 @@ func (d *simpleDatabase) GetState(id network.StaticId) FileState {
 	}
 }
 
-func (d *simpleDatabase) GetAt(b []byte, id network.StaticId, off hashtree.Bytes) (int, error) {
+func (d *simpleDatabase) GetAt(b []byte, id network.StaticId, off hashtree.Bytes) (hashtree.Bytes, error) {
 	f, err := os.Open(d.fileNameForId(id))
 	if err != nil {
 		return 0, ERROR_NOT_LOCAL
 	}
 	defer f.Close()
-	return f.ReadAt(b, int64(off))
+	n, err := f.ReadAt(b, int64(off))
+	return hashtree.Bytes(n), err
 }
 
 func (d *simpleDatabase) GetInnerHashes(id network.StaticId, req network.InnerHashes) (network.InnerHashes, error) {
