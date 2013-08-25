@@ -114,6 +114,9 @@ func testPartSize(size hashtree.Bytes, source Database, part Database, t *testin
 	if !comp || has != leafs {
 		t.Fatalf("complete:%v, %v/%v", comp, has, leafs)
 	}
+	if part.GetState(id) != FILE_COMPLETE {
+		t.Fatalf("The file should be complete:%v", id.CompactId())
+	}
 }
 
 func testTransferHash(req network.InnerHashes, id network.StaticId, source Database, part Database, t *testing.T) (has hashtree.Nodes, complete bool, err error) {

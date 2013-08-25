@@ -125,6 +125,17 @@ func (d *simpleDatabase) innerHashListenerFile(hasher hashtree.HashTree, len has
 	return file
 }
 
+func moveOrRemoveFile(from string, to string) {
+	err := os.Rename(from, to)
+	if err != nil {
+		if os.IsExist(err) {
+			os.Remove(from)
+		} else {
+			panic(err)
+		}
+	}
+}
+
 func (d *simpleDatabase) ImportFromReader(r io.Reader) network.StaticId {
 	f, err := ioutil.TempFile(d.dirname, "import-")
 	if err != nil {
@@ -146,22 +157,8 @@ func (d *simpleDatabase) ImportFromReader(r io.Reader) network.StaticId {
 	f.Close()
 	hashFile.Close()
 
-	err = os.Rename(f.Name(), d.fileNameForId(id))
-	if err != nil {
-		if os.IsExist(err) {
-			os.Remove(f.Name())
-		} else {
-			panic(err)
-		}
-	}
-	err = os.Rename(hashFile.Name(), d.hashFileNameForId(id))
-	if err != nil {
-		if os.IsExist(err) {
-			os.Remove(hashFile.Name())
-		} else {
-			panic(err)
-		}
-	}
+	moveOrRemoveFile(f.Name(), d.fileNameForId(id))
+	moveOrRemoveFile(hashFile.Name(), d.hashFileNameForId(id))
 	return id
 }
 
@@ -237,7 +234,7 @@ func (d *simpleDatabase) StartPart(id network.StaticId) error {
 	}
 
 }
-func (d *simpleDatabase) PutAt(b []byte, id network.StaticId, off hashtree.Bytes) (has hashtree.Nodes, complete bool, err error) {
+func (d *simpleDatabase) putAt(b []byte, id network.StaticId, off hashtree.Bytes) (has hashtree.Nodes, complete bool, err error) {
 	blocks := id.Blocks()
 	f, err := os.OpenFile(d.partFileNameForId(id), os.O_RDWR, 0666)
 	if err != nil {
@@ -284,10 +281,15 @@ func (d *simpleDatabase) PutAt(b []byte, id network.StaticId, off hashtree.Bytes
 			bits.Set(int(nthBlock))
 		}
 	}
-	if bits.Full() {
-		//todo: move file to completed
-	}
 	return hashtree.Nodes(bits.Count()), bits.Full(), nil
+}
+
+func (d *simpleDatabase) PutAt(b []byte, id network.StaticId, off hashtree.Bytes) (has hashtree.Nodes, complete bool, err error) {
+	has, complete, err = d.putAt(b, id, off)
+	if err == nil && complete {
+		moveOrRemoveFile(d.partFileNameForId(id), d.fileNameForId(id))
+	}
+	return
 }
 
 func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHashes) (has hashtree.Nodes, complete bool, err error) {
