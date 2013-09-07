@@ -2,6 +2,7 @@ package server
 
 import (
 	"../network"
+	"fmt"
 	logPkg "log"
 	"os"
 )
@@ -13,8 +14,36 @@ func init() {
 }
 
 type Server struct {
-	Setting Setting
-	Conn    *network.BitXConn
+	setting  Setting
+	conn     *network.BitXConn
+	database Database
+}
+
+type Setting struct {
+	Hello            network.ServerHello
+	DatabaseLocation string
+	DatabaseType     string
+	Port             int
+	IP               string
+}
+
+func NewServer(s Setting) *Server {
+	conn, err := network.ListenUDP(s.IP, s.Port)
+	if err != nil {
+		panic(err)
+	}
+	if !conn.StartServerLoop() {
+		panic(fmt.Errorf("can't start server:%v", s))
+	}
+	database := Database(nil)
+	switch s.DatabaseType {
+	case "simple":
+		database = OpenSimpleDatabase(s.DatabaseLocation, 0)
+	default:
+		panic(fmt.Errorf("unknown database type:%v", s.DatabaseType))
+	}
+
+	return &Server{s, conn, database}
 }
 
 func (s *Server) consume(ps <-chan network.BitXPacket) {
@@ -26,13 +55,14 @@ func (s *Server) consume(ps <-chan network.BitXPacket) {
 func (s *Server) process(bp network.BitXPacket) {
 	addr := bp.Addr
 	rece := bp.Packet
-	send := &network.Packet{}
 	if rece.Hello != nil {
 		log.Printf("got hello:%v from:%v", rece.Hello, addr)
 	}
 	if rece.GetHelloRequest() {
 		log.Printf("req hello from:%v", addr)
-		send.Hello = &s.Setting.Hello
+		send := &network.Packet{}
+		send.Hello = &s.setting.Hello
+		s.conn.Send(send, addr)
 	}
 
 	if rece.File != nil {
@@ -41,7 +71,5 @@ func (s *Server) process(bp network.BitXPacket) {
 			log.Printf("about:%v", id)
 		}
 	}
-
-	s.Conn.Send(send, addr)
 
 }
