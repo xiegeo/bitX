@@ -14,9 +14,9 @@ func init() {
 }
 
 type Server struct {
-	setting  Setting
-	conn     *network.BitXConn
-	database Database
+	setting Setting
+	conn    *network.BitXConn
+	Database
 }
 
 type Setting struct {
