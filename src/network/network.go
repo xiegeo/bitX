@@ -2,10 +2,46 @@ package network
 
 import (
 	"../hashtree"
+	"bytes"
+	"code.google.com/p/goprotobuf/proto"
 	"fmt"
 )
 
 // additional functions to complement network.pb.go
+
+func (p *Packet) MergeFile(f *File) {
+	files := p.GetFiles()
+	haveFile := false
+	for _, v := range files {
+		if f.GetId().Equal(v.GetId()) {
+			proto.Merge(v, f) // todo: a better merge
+			haveFile = true
+			break
+		}
+	}
+	if !haveFile {
+		files = append(files, f)
+		p.Files = files
+	}
+}
+
+func (p *Packet) FillHashRequest(id *StaticId, height hashtree.Level, from, length hashtree.Nodes) {
+	hashReq := NewInnerHashes(height, from, length, nil)
+	file := &File{Id: id, HashAsk: []*InnerHashes{&hashReq}}
+	p.MergeFile(file)
+}
+
+// test if two ids are the same (in hash and length), panic if ether or both are nil
+func (id *StaticId) Equal(other *StaticId) bool {
+	if id == nil || other == nil {
+		//return false;
+		panic(fmt.Errorf("nil in Equals: %v.Equals(%v)", id, other))
+	}
+	if id.GetLength() != other.GetLength() {
+		return false
+	}
+	return bytes.Equal(id.GetHash(), other.GetHash())
+}
 
 func (id *StaticId) CompactId() string {
 	return fmt.Sprintf("%x-%d", id.GetHash(), id.GetLength())
