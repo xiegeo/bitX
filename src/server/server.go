@@ -65,8 +65,8 @@ func (s *Server) process(bp network.BitXPacket) {
 		s.conn.Send(send, addr)
 	}
 
-	if rece.File != nil {
-		for _, f := range rece.File {
+	if rece.Files != nil {
+		for _, f := range rece.Files {
 			id := f.Id
 			log.Printf("about:%v", id)
 		}

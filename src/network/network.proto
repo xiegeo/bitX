@@ -55,7 +55,7 @@ message Packet{
 	optional ServerHello hello = 2;
 	optional bool hello_request = 3;
 	repeated Retains retains = 4;
-	repeated File file = 5;
+	repeated File files = 5;
 	
 	repeated string bebug = 900;
 }
