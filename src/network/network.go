@@ -3,33 +3,10 @@ package network
 import (
 	"../hashtree"
 	"bytes"
-	"code.google.com/p/goprotobuf/proto"
 	"fmt"
 )
 
 // additional functions to complement network.pb.go
-
-func (p *Packet) MergeFile(f *File) {
-	files := p.GetFiles()
-	haveFile := false
-	for _, v := range files {
-		if f.GetId().Equal(v.GetId()) {
-			proto.Merge(v, f) // todo: a better merge
-			haveFile = true
-			break
-		}
-	}
-	if !haveFile {
-		files = append(files, f)
-		p.Files = files
-	}
-}
-
-func (p *Packet) FillHashRequest(id *StaticId, height hashtree.Level, from, length hashtree.Nodes) {
-	hashReq := NewInnerHashes(height, from, length, nil)
-	file := &File{Id: id, HashAsk: []*InnerHashes{&hashReq}}
-	p.MergeFile(file)
-}
 
 // test if two ids are the same (in hash and length), panic if ether or both are nil
 func (id *StaticId) Equal(other *StaticId) bool {
@@ -43,6 +20,7 @@ func (id *StaticId) Equal(other *StaticId) bool {
 	return bytes.Equal(id.GetHash(), other.GetHash())
 }
 
+// return an url and file name safe string that uniquely represent this file
 func (id *StaticId) CompactId() string {
 	return fmt.Sprintf("%x-%d", id.GetHash(), id.GetLength())
 }
@@ -82,12 +60,22 @@ func (in *InnerHashes) GetFromN() hashtree.Nodes {
 	return hashtree.Nodes(in.GetFrom())
 }
 
+//check remote messages for problems that code protected by this don't have to worry about
 func (in *InnerHashes) CheckWellFormedForId(id *StaticId) error {
 	if in.GetFrom() < 0 {
 		return fmt.Errorf("from %v is less than 0", in.GetFrom())
 	}
-	if in.GetLength()*hashtree.HASH_BYTES != int32(len(in.GetHashes())) {
-		return fmt.Errorf("reported length %v blocks != length of data %v bytes", in.GetLength(), len(in.GetHashes()))
+	hashSize := len(in.GetHashes())
+	if int(in.GetLength()*hashtree.HASH_BYTES) != hashSize {
+		if hashSize > 0 && hashSize%hashtree.HASH_BYTES == 0 {
+			//if length is not send or set, we can add it from the length of the hash
+			length := int32(hashSize / hashtree.HASH_BYTES)
+			in.Length = &length
+		} else if hashSize == 0 {
+			//no hash here yet, just a request length, this is ok.
+		} else {
+			return fmt.Errorf("reported length %v blocks != length of data %v bytes", in.GetLength(), len(in.GetHashes()))
+		}
 	}
 	width := id.WidthForLevelOf(in)
 	if in.GetFromN()+in.GetLengthN() > width {
@@ -218,6 +206,7 @@ func sls(from hashtree.Nodes, to hashtree.Nodes, width hashtree.Nodes) [][2]hash
 	}
 }
 
+//Split inner hashes based on highest derivable ancestors
 func (in *InnerHashes) SplitLocalSummable(id *StaticId) []InnerHashes {
 	if err := in.CheckWellFormedForId(id); err != nil {
 		panic(err)
