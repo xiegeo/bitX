@@ -37,6 +37,17 @@ func (id *StaticId) WidthForLevelOf(in *InnerHashes) hashtree.Nodes {
 	return hashtree.LevelWidth(id.Blocks(), hashtree.Level(in.GetHeight()))
 }
 
+func NewFileData(from, length hashtree.Bytes, bytes []byte) FileData {
+	f := int64(from)
+	l := int32(length)
+	return FileData{
+		From:     &f,
+		Length:   &l,
+		InBlocks: nil,
+		Data:     bytes,
+	}
+}
+
 func NewInnerHashes(height hashtree.Level, from hashtree.Nodes, length hashtree.Nodes, bytes []byte) InnerHashes {
 	h := int32(height)
 	f := int32(from)

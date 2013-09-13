@@ -22,9 +22,16 @@ func (p *Packet) MergeFile(f *File) {
 	}
 }
 
-//add file request information to the packet
+//add file hash request information to the packet
 func (p *Packet) FillHashRequest(id *StaticId, height hashtree.Level, from, length hashtree.Nodes) {
 	hashReq := NewInnerHashes(height, from, length, nil)
 	file := &File{Id: id, HashAsk: []*InnerHashes{&hashReq}}
+	p.MergeFile(file)
+}
+
+//add file data request information to the packet
+func (p *Packet) FillDataRequest(id *StaticId, from, length hashtree.Bytes) {
+	fileReq := NewFileData(from, length, nil)
+	file := &File{Id: id, DataAsk: []*FileData{&fileReq}}
 	p.MergeFile(file)
 }
