@@ -26,13 +26,15 @@ func TestServerDataProvider(t *testing.T) {
 	}
 
 	for _, size := range fileSizes {
-		/*id :=*/ s1.ImportFromReader(&testFile{length: size})
+		id := s1.ImportFromReader(&testFile{length: size})
 
 		p := &network.Packet{}
 
-		//todo fill p
+		p.FillHashRequest(id, 0, 0, hashtree.FileNodesDefault(size))
 
 		conn.Send(p, toAddr)
+
+		//todo, check returned
 
 	}
 
