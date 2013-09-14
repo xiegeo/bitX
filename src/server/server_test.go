@@ -10,8 +10,8 @@ import (
 
 func TestServerDataProvider(t *testing.T) {
 
-	set1 := Setting{network.ServerHello{}, ".testServer1", "simple", 30001, "127.0.0.1"}
-	set2 := Setting{network.ServerHello{}, ".testServer1", "simple", 30002, "127.0.0.1"}
+	set1 := Setting{network.ServerHello{}, ".testServer1", "simple", 30011, "127.0.0.1"}
+	set2 := Setting{network.ServerHello{}, ".testServer1", "simple", 30012, "127.0.0.1"}
 	s1 := NewServer(set1)
 	s2 := NewServer(set2)
 
