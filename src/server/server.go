@@ -43,7 +43,11 @@ func NewServer(s Setting) *Server {
 		panic(fmt.Errorf("unknown database type:%v", s.DatabaseType))
 	}
 
-	return &Server{s, conn, database}
+	server := &Server{s, conn, database}
+
+	go server.consume(conn.Receive)
+
+	return server
 }
 
 func (s *Server) consume(ps <-chan network.BitXPacket) {
