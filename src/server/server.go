@@ -73,6 +73,18 @@ func (s *Server) process(bp network.BitXPacket) {
 		for _, f := range rece.Files {
 			id := f.Id
 			log.Printf("about:%v", id)
+			for _, ha := range f.HashAsk {
+				log.Printf("hash ask:%v", ha)
+			}
+			for _, hs := range f.HashSend {
+				log.Printf("hash send:%v", hs)
+			}
+			for _, da := range f.DataAsk {
+				log.Printf("data ask:%v", da)
+			}
+			for _, ds := range f.DataSend {
+				log.Printf("data send:%v", ds)
+			}
 		}
 	}
 
