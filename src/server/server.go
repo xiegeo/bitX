@@ -59,25 +59,36 @@ func (s *Server) consume(ps <-chan network.BitXPacket) {
 func (s *Server) process(bp network.BitXPacket) {
 	addr := bp.Addr
 	rece := bp.Packet
+	send := &network.Packet{}
 	if rece.Hello != nil {
 		log.Printf("got hello:%v from:%v", rece.Hello, addr)
 	}
 	if rece.GetHelloRequest() {
 		log.Printf("req hello from:%v", addr)
-		send := &network.Packet{}
 		send.Hello = &s.setting.Hello
-		s.conn.Send(send, addr)
 	}
 
 	if rece.Files != nil {
 		for _, f := range rece.Files {
 			id := f.Id
-			log.Printf("about:%v", id)
+			log.Printf("about:%v", id.CompactId())
 			for _, ha := range f.HashAsk {
 				log.Printf("hash ask:%v", ha)
+				hashes, err := s.GetInnerHashes(*id, *ha)
+				if err != nil {
+					log.Printf("err:%v", err)
+				}else{
+					send.FillHashSend(*id, hashes)
+				}
 			}
 			for _, hs := range f.HashSend {
 				log.Printf("hash send:%v", hs)
+				number, comp, err := s.PutInnerHashes(*id, *hs)
+				if err != nil {
+					log.Printf("err:%v", err)
+				}else{
+					log.Printf("has:%v, is completed:%v", number, comp)
+				}
 			}
 			for _, da := range f.DataAsk {
 				log.Printf("data ask:%v", da)
@@ -87,5 +98,8 @@ func (s *Server) process(bp network.BitXPacket) {
 			}
 		}
 	}
-
+	if !send.IsEmpty() {
+		s.conn.Send(send, addr)
+	}
+	
 }

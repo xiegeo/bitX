@@ -5,6 +5,10 @@ import (
 	"code.google.com/p/goprotobuf/proto"
 )
 
+func (p *Packet) IsEmpty() bool{
+	return p.Hello == nil && p.HelloRequest == nil && p.Retains == nil && p.Files == nil && p.Bebug == nil 
+}
+
 //Put File information into Packet, reusing existing file hash if possible
 func (p *Packet) MergeFile(f *File) {
 	files := p.GetFiles()
@@ -26,6 +30,12 @@ func (p *Packet) MergeFile(f *File) {
 func (p *Packet) FillHashRequest(id StaticId, height hashtree.Level, from, length hashtree.Nodes) {
 	hashReq := NewInnerHashes(height, from, length, nil)
 	file := &File{Id: &id, HashAsk: []*InnerHashes{&hashReq}}
+	p.MergeFile(file)
+}
+
+//add file hash request information to the packet
+func (p *Packet) FillHashSend(id StaticId, hashes InnerHashes) {
+	file := &File{Id: &id, HashSend: []*InnerHashes{&hashes}}
 	p.MergeFile(file)
 }
 
