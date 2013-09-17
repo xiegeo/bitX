@@ -77,7 +77,7 @@ func (s *Server) process(bp network.BitXPacket) {
 				hashes, err := s.GetInnerHashes(*id, *ha)
 				if err != nil {
 					log.Printf("err:%v", err)
-				}else{
+				} else {
 					send.FillHashSend(*id, hashes)
 				}
 			}
@@ -86,7 +86,7 @@ func (s *Server) process(bp network.BitXPacket) {
 				number, comp, err := s.PutInnerHashes(*id, *hs)
 				if err != nil {
 					log.Printf("err:%v", err)
-				}else{
+				} else {
 					log.Printf("has:%v, is completed:%v", number, comp)
 				}
 			}
@@ -101,5 +101,5 @@ func (s *Server) process(bp network.BitXPacket) {
 	if !send.IsEmpty() {
 		s.conn.Send(send, addr)
 	}
-	
+
 }

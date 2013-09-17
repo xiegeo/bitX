@@ -5,8 +5,8 @@ import (
 	"code.google.com/p/goprotobuf/proto"
 )
 
-func (p *Packet) IsEmpty() bool{
-	return p.Hello == nil && p.HelloRequest == nil && p.Retains == nil && p.Files == nil && p.Bebug == nil 
+func (p *Packet) IsEmpty() bool {
+	return p.Hello == nil && p.HelloRequest == nil && p.Retains == nil && p.Files == nil && p.Bebug == nil
 }
 
 //Put File information into Packet, reusing existing file hash if possible
