@@ -87,14 +87,27 @@ func (s *Server) process(bp network.BitXPacket) {
 				if err != nil {
 					log.Printf("err:%v", err)
 				} else {
-					log.Printf("has:%v, is completed:%v", number, comp)
+					log.Printf("have inner hashes:%v, is completed:%v", number, comp)
 				}
 			}
 			for _, da := range f.DataAsk {
 				log.Printf("data ask:%v", da)
+				b := make([]byte, da.GetLengthB())
+				_, err := s.GetAt(b, *id, da.GetFromB())
+				if err != nil {
+					log.Printf("err:%v", err)
+				} else {
+					send.FillDataSend(*id, da.GetFromB(), da.GetLengthB(), b)
+				}
 			}
 			for _, ds := range f.DataSend {
 				log.Printf("data send:%v", ds)
+				number, comp, err := s.PutAt(ds.GetData(), *id, ds.GetFromB())
+				if err != nil {
+					log.Printf("err:%v", err)
+				} else {
+					log.Printf("have data blocks:%v, is completed:%v", number, comp)
+				}
 			}
 		}
 	}
