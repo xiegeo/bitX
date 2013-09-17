@@ -48,6 +48,14 @@ func NewFileData(from, length hashtree.Bytes, bytes []byte) FileData {
 	}
 }
 
+func (m *FileData) GetFromB() hashtree.Bytes {
+	return hashtree.Bytes(m.GetFrom())
+}
+
+func (m *FileData) GetLengthB() hashtree.Bytes {
+	return hashtree.Bytes(m.GetLength())
+}
+
 func NewInnerHashes(height hashtree.Level, from hashtree.Nodes, length hashtree.Nodes, bytes []byte) InnerHashes {
 	h := int32(height)
 	f := int32(from)

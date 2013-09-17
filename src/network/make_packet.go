@@ -33,7 +33,7 @@ func (p *Packet) FillHashRequest(id StaticId, height hashtree.Level, from, lengt
 	p.MergeFile(file)
 }
 
-//add file hash request information to the packet
+//add file hash send information to the packet
 func (p *Packet) FillHashSend(id StaticId, hashes InnerHashes) {
 	file := &File{Id: &id, HashSend: []*InnerHashes{&hashes}}
 	p.MergeFile(file)
@@ -43,5 +43,12 @@ func (p *Packet) FillHashSend(id StaticId, hashes InnerHashes) {
 func (p *Packet) FillDataRequest(id StaticId, from, length hashtree.Bytes) {
 	fileReq := NewFileData(from, length, nil)
 	file := &File{Id: &id, DataAsk: []*FileData{&fileReq}}
+	p.MergeFile(file)
+}
+
+//add file data send information to the packet
+func (p *Packet) FillDataSend(id StaticId, from, length hashtree.Bytes, data []byte) {
+	fileData := NewFileData(from, length, data)
+	file := &File{Id: &id, DataSend: []*FileData{&fileData}}
 	p.MergeFile(file)
 }
