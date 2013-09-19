@@ -11,6 +11,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"time"
 )
 
 var ERROR_NOT_LOCAL = errors.New("file is not locally available")
@@ -30,6 +31,7 @@ const (
 type Database interface {
 	LowestInnerHashes() hashtree.Level
 	ImportFromReader(r io.Reader) network.StaticId
+	WaitFor(id network.StaticId, toState FileState, timeOut time.Duration) (ok bool, curState FileState, timeTook time.Duration)
 	GetState(id network.StaticId) FileState
 	GetAt(b []byte, id network.StaticId, off hashtree.Bytes) (hashtree.Bytes, error)
 	GetInnerHashes(id network.StaticId, req network.InnerHashes) (network.InnerHashes, error)
@@ -160,6 +162,10 @@ func (d *simpleDatabase) ImportFromReader(r io.Reader) network.StaticId {
 	moveOrRemoveFile(f.Name(), d.fileNameForId(id))
 	moveOrRemoveFile(hashFile.Name(), d.hashFileNameForId(id))
 	return id
+}
+
+func (d *simpleDatabase) WaitFor(id network.StaticId, toState FileState, timeOut time.Duration) (ok bool, curState FileState, timeTook time.Duration) {
+	return false, FILE_UNKNOW, 0
 }
 
 func (d *simpleDatabase) GetState(id network.StaticId) FileState {
