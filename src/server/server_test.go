@@ -53,9 +53,7 @@ func TestServerDataProvider(t *testing.T) {
 	}
 	for i := 0; i < 2; i++ {
 		for _, id := range files {
-			if s2.GetState(id) != FILE_COMPLETE {
-				time.Sleep(100 * time.Millisecond)
-			}
+			s2.WaitFor(id, FILE_COMPLETE, 1 * time.Second) 
 		}
 	}
 
