@@ -16,7 +16,6 @@ func (d *ListeningDatabase) writeHappend(id network.StaticId) {
 	//send file state to listeners
 }
 
-
 func (d *ListeningDatabase) Close() {
 	d.Database.Close()
 	// terminate all listners
@@ -46,7 +45,7 @@ func (d *ListeningDatabase) PutAt(b []byte, id network.StaticId, off hashtree.By
 }
 
 func (d *ListeningDatabase) PutInnerHashes(id network.StaticId, set network.InnerHashes) (has hashtree.Nodes, complete bool, err error) {
-	has, complete, err = d.Database.PutInnerHashes(id,set)
+	has, complete, err = d.Database.PutInnerHashes(id, set)
 	d.writeHappend(id)
 	return
 }
