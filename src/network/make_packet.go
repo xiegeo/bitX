@@ -14,7 +14,7 @@ func (p *Packet) MergeFile(f *File) {
 	files := p.GetFiles()
 	haveFile := false
 	for _, v := range files {
-		if f.GetId().Equal(v.GetId()) {
+		if f.GetId().Equal(*(v.GetId())) {
 			proto.Merge(v, f) // todo: a better merge
 			haveFile = true
 			break

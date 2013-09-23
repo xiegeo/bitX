@@ -9,11 +9,7 @@ import (
 // additional functions to complement network.pb.go
 
 // test if two ids are the same (in hash and length), panic if ether or both are nil
-func (id *StaticId) Equal(other *StaticId) bool {
-	if id == nil || other == nil {
-		//return false;
-		panic(fmt.Errorf("nil in Equals: %v.Equals(%v)", id, other))
-	}
+func (id StaticId) Equal(other StaticId) bool {
 	if id.GetLength() != other.GetLength() {
 		return false
 	}
