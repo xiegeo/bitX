@@ -5,24 +5,32 @@ import (
 	"../network"
 	"io"
 	"time"
+	"sync"
 )
 
+// Implements WaitFor for Database, a database expect WaitFor
+// to happen on a different go routine than all other functions
 type ListeningDatabase struct {
 	Database
 	listeners map[string][]chan FileState
+	lock sync.RWMutex //locks listener R & W
 }
 
 func NewListeningDatabase(d Database) *ListeningDatabase {
-	return &ListeningDatabase{d, make(map[string][]chan FileState)}
+	return &ListeningDatabase{d, make(map[string][]chan FileState), sync.RWMutex{}}
 }
 
 func (d *ListeningDatabase) AddListener(id network.StaticId, listener chan FileState) {
 	sid := id.CompactId()
+	d.lock.Lock()
+	defer d.lock.Unlock()
 	d.listeners[sid] = append(d.listeners[sid], listener)
 }
 
 func (d *ListeningDatabase) RemoveListener(id network.StaticId, listener chan FileState) {
 	sid := id.CompactId()
+	d.lock.Lock()
+	defer d.lock.Unlock()
 	ls, ok := d.listeners[sid]
 	if ok {
 		if len(ls) == 1 && ls[0] == listener {
@@ -42,6 +50,8 @@ func (d *ListeningDatabase) RemoveListener(id network.StaticId, listener chan Fi
 
 func (d *ListeningDatabase) writeHappend(id network.StaticId) {
 	sid := id.CompactId()
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 	ls, ok := d.listeners[sid]
 	if ok {
 		state := d.GetState(id)
