@@ -69,7 +69,7 @@ func OpenSimpleDatabase(dirname string, lowestInnerHashes hashtree.Level) Databa
 		lowestInnerHashes: lowestInnerHashes,
 	}
 	d.listener = NewListeningDatabase(d)
-	return d
+	return d.listener
 }
 
 func (d *simpleDatabase) Close() {
