@@ -12,6 +12,14 @@ type ListeningDatabase struct {
 	listeners map[*network.StaticId][]chan FileState
 }
 
+func NewListeningDatabase(d Database) *ListeningDatabase {
+	return &ListeningDatabase{d, make(map[*network.StaticId][]chan FileState)}
+}
+
+func (d *ListeningDatabase) AddListener(id network.StaticId, listener chan FileState) {
+	d.listeners[&id] = append(d.listeners[&id], listener)
+}
+
 func (d *ListeningDatabase) writeHappend(id network.StaticId) {
 	//send file state to listeners
 }
@@ -27,9 +35,16 @@ func (d *ListeningDatabase) ImportFromReader(r io.Reader) network.StaticId {
 	return id
 }
 
-func (d *ListeningDatabase) WaitFor(id network.StaticId, toState FileState, timeOut time.Duration) (ok bool, curState FileState, timeTook time.Duration) {
-	//add listener
-	return false, FILE_UNKNOW, 0
+func (d *ListeningDatabase) WaitFor(id network.StaticId, toState FileState, timeOut time.Duration) (ok bool, curState FileState) {
+	listener := make(chan FileState)
+	defer close(listener)
+	d.AddListener(id, listener)
+	startState := d.GetState(id)
+	if startState == toState {
+		return true, startState
+	}
+
+	return false, FILE_UNKNOW
 }
 
 func (d *ListeningDatabase) StartPart(id network.StaticId) error {

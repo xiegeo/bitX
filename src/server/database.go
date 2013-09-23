@@ -31,8 +31,8 @@ const (
 type Database interface {
 	LowestInnerHashes() hashtree.Level
 	ImportFromReader(r io.Reader) network.StaticId
-	WaitFor(id network.StaticId, toState FileState, timeOut time.Duration) (ok bool, curState FileState, timeTook time.Duration)
 	GetState(id network.StaticId) FileState
+	WaitFor(id network.StaticId, toState FileState, timeOut time.Duration) (ok bool, curState FileState)
 	GetAt(b []byte, id network.StaticId, off hashtree.Bytes) (hashtree.Bytes, error)
 	GetInnerHashes(id network.StaticId, req network.InnerHashes) (network.InnerHashes, error)
 	StartPart(id network.StaticId) error
@@ -54,6 +54,7 @@ type simpleDatabase struct {
 	datafolder        *os.File
 	dirname           string
 	lowestInnerHashes hashtree.Level
+	listener          *ListeningDatabase
 }
 
 func OpenSimpleDatabase(dirname string, lowestInnerHashes hashtree.Level) Database {
@@ -67,7 +68,7 @@ func OpenSimpleDatabase(dirname string, lowestInnerHashes hashtree.Level) Databa
 		dirname:           dirname,
 		lowestInnerHashes: lowestInnerHashes,
 	}
-
+	d.listener = NewListeningDatabase(d)
 	return d
 }
 
@@ -164,10 +165,6 @@ func (d *simpleDatabase) ImportFromReader(r io.Reader) network.StaticId {
 	return id
 }
 
-func (d *simpleDatabase) WaitFor(id network.StaticId, toState FileState, timeOut time.Duration) (ok bool, curState FileState, timeTook time.Duration) {
-	return false, FILE_UNKNOW, 0
-}
-
 func (d *simpleDatabase) GetState(id network.StaticId) FileState {
 	_, err := os.Stat(d.fileNameForId(id))
 	if os.IsNotExist(err) {
@@ -180,6 +177,10 @@ func (d *simpleDatabase) GetState(id network.StaticId) FileState {
 	} else {
 		return FILE_COMPLETE
 	}
+}
+
+func (d *simpleDatabase) WaitFor(id network.StaticId, toState FileState, timeOut time.Duration) (ok bool, curState FileState) {
+	return d.listener.WaitFor(id, toState, timeOut)
 }
 
 func (d *simpleDatabase) GetAt(b []byte, id network.StaticId, off hashtree.Bytes) (hashtree.Bytes, error) {
