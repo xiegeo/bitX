@@ -4,20 +4,20 @@ import (
 	"../hashtree"
 	"../network"
 	"io"
-	"time"
 	"sync"
+	"time"
 )
 
 // Implements WaitFor for Database, a database expect WaitFor
 // to happen on different go routines than all other functions
 type ListeningDatabase struct {
 	Database
-	listeners map[string]map[chan FileState] bool
-	lock sync.RWMutex //locks listener R & W
+	listeners map[string]map[chan FileState]bool
+	lock      sync.RWMutex //locks listeners R & W
 }
 
 func NewListeningDatabase(d Database) *ListeningDatabase {
-	return &ListeningDatabase{d, make(map[string]map[chan FileState] bool), sync.RWMutex{}}
+	return &ListeningDatabase{d, make(map[string]map[chan FileState]bool), sync.RWMutex{}}
 }
 
 func (d *ListeningDatabase) AddListener(id network.StaticId, listener chan FileState) {
@@ -26,7 +26,7 @@ func (d *ListeningDatabase) AddListener(id network.StaticId, listener chan FileS
 	defer d.lock.Unlock()
 	ls, ok := d.listeners[sid]
 	if !ok {
-		ls = make(map[chan FileState] bool)
+		ls = make(map[chan FileState]bool)
 		d.listeners[sid] = ls
 	}
 	ls[listener] = true
@@ -40,20 +40,26 @@ func (d *ListeningDatabase) RemoveListener(id network.StaticId, listener chan Fi
 	if ok {
 		delete(ls, listener)
 		if len(ls) == 0 {
-			delete(d.listeners,sid)
+			delete(d.listeners, sid)
 		}
 	}
 }
 
 func (d *ListeningDatabase) writeHappend(id network.StaticId) {
 	sid := id.CompactId()
-	d.lock.RLock()
-	defer d.lock.RUnlock()
-	ls, ok := d.listeners[sid]
+	_, ok := d.listeners[sid]
 	if ok {
 		state := d.GetState(id)
-		for listener := range ls {
-			listener <- state
+		// only get state (which may use disk) if there are listeners,
+		// but before lock so it does not block, then we have to get
+		// listeners again after lock (which is just one more map lookup)
+		d.lock.RLock()
+		defer d.lock.RUnlock()
+		ls, ok := d.listeners[sid]
+		if ok {
+			for listener := range ls {
+				listener <- state
+			}
 		}
 	}
 }
