@@ -9,19 +9,46 @@ import (
 
 type ListeningDatabase struct {
 	Database
-	listeners map[*network.StaticId][]chan FileState
+	listeners map[string][]chan FileState
 }
 
 func NewListeningDatabase(d Database) *ListeningDatabase {
-	return &ListeningDatabase{d, make(map[*network.StaticId][]chan FileState)}
+	return &ListeningDatabase{d, make(map[string][]chan FileState)}
 }
 
 func (d *ListeningDatabase) AddListener(id network.StaticId, listener chan FileState) {
-	d.listeners[&id] = append(d.listeners[&id], listener)
+	sid := id.CompactId()
+	d.listeners[sid] = append(d.listeners[sid], listener)
+}
+
+func (d *ListeningDatabase) RemoveListener(id network.StaticId, listener chan FileState) {
+	sid := id.CompactId()
+	ls, ok := d.listeners[sid]
+	if ok {
+		if len(ls) == 1 && ls[0] == listener {
+			delete(d.listeners, sid)
+		} else {
+			for k, v := range ls {
+				if v == listener {
+					last := len(ls) - 1
+					ls[k] = ls[last]
+					d.listeners[sid] = ls[0:last]
+					return
+				}
+			}
+		}
+	}
 }
 
 func (d *ListeningDatabase) writeHappend(id network.StaticId) {
-	//send file state to listeners
+	sid := id.CompactId()
+	ls, ok := d.listeners[sid]
+	if ok {
+		state := d.GetState(id)
+		for _, v := range ls {
+			v <- state
+		}
+	}
 }
 
 func (d *ListeningDatabase) Close() {
@@ -39,22 +66,24 @@ func (d *ListeningDatabase) WaitFor(id network.StaticId, toState FileState, time
 	listener := make(chan FileState)
 	defer close(listener)
 	d.AddListener(id, listener)
+	defer d.RemoveListener(id, listener)
+
 	startState := d.GetState(id)
 	if startState == toState {
 		return true, startState
 	}
-	for true{
+	for true {
 		select {
-			case state := <- listener:
-				if state == toState {
-					return true, state
-				}
-			case <- time.After(timeOut):
-				state := d.GetState(id)
-				return state == toState, state
+		case state := <-listener:
+			if state == toState {
+				return true, state
+			}
+		case <-time.After(timeOut):
+			state := d.GetState(id)
+			return state == toState, state
 		}
 	}
-	panic("code don't reach here");
+	panic("code should not reach here")
 }
 
 func (d *ListeningDatabase) StartPart(id network.StaticId) error {
