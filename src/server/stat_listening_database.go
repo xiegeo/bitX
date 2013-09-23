@@ -43,8 +43,18 @@ func (d *ListeningDatabase) WaitFor(id network.StaticId, toState FileState, time
 	if startState == toState {
 		return true, startState
 	}
-
-	return false, FILE_UNKNOW
+	for true{
+		select {
+			case state := <- listener:
+				if state == toState {
+					return true, state
+				}
+			case <- time.After(timeOut):
+				state := d.GetState(id)
+				return state == toState, state
+		}
+	}
+	panic("code don't reach here");
 }
 
 func (d *ListeningDatabase) StartPart(id network.StaticId) error {
