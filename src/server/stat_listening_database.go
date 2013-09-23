@@ -9,22 +9,27 @@ import (
 )
 
 // Implements WaitFor for Database, a database expect WaitFor
-// to happen on a different go routine than all other functions
+// to happen on different go routines than all other functions
 type ListeningDatabase struct {
 	Database
-	listeners map[string][]chan FileState
+	listeners map[string]map[chan FileState] bool
 	lock sync.RWMutex //locks listener R & W
 }
 
 func NewListeningDatabase(d Database) *ListeningDatabase {
-	return &ListeningDatabase{d, make(map[string][]chan FileState), sync.RWMutex{}}
+	return &ListeningDatabase{d, make(map[string]map[chan FileState] bool), sync.RWMutex{}}
 }
 
 func (d *ListeningDatabase) AddListener(id network.StaticId, listener chan FileState) {
 	sid := id.CompactId()
 	d.lock.Lock()
 	defer d.lock.Unlock()
-	d.listeners[sid] = append(d.listeners[sid], listener)
+	ls, ok := d.listeners[sid]
+	if !ok {
+		ls = make(map[chan FileState] bool)
+		d.listeners[sid] = ls
+	}
+	ls[listener] = true
 }
 
 func (d *ListeningDatabase) RemoveListener(id network.StaticId, listener chan FileState) {
@@ -33,17 +38,9 @@ func (d *ListeningDatabase) RemoveListener(id network.StaticId, listener chan Fi
 	defer d.lock.Unlock()
 	ls, ok := d.listeners[sid]
 	if ok {
-		if len(ls) == 1 && ls[0] == listener {
-			delete(d.listeners, sid)
-		} else {
-			for k, v := range ls {
-				if v == listener {
-					last := len(ls) - 1
-					ls[k] = ls[last]
-					d.listeners[sid] = ls[0:last]
-					return
-				}
-			}
+		delete(ls, listener)
+		if len(ls) == 0 {
+			delete(d.listeners,sid)
 		}
 	}
 }
@@ -55,8 +52,8 @@ func (d *ListeningDatabase) writeHappend(id network.StaticId) {
 	ls, ok := d.listeners[sid]
 	if ok {
 		state := d.GetState(id)
-		for _, v := range ls {
-			v <- state
+		for listener := range ls {
+			listener <- state
 		}
 	}
 }
