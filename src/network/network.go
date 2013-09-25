@@ -52,6 +52,21 @@ func (m *FileData) GetLengthB() hashtree.Bytes {
 	return hashtree.Bytes(m.GetLength())
 }
 
+func shortString(data []byte) string {
+	l := len(data)
+	if l == 0 {
+		return "(empty)"
+	} else if l <= 32 {
+		return fmt.Sprintf("(%v)%X", l, data)
+	} else {
+		return fmt.Sprintf("(%v)%X ... %X", l, data[:8], data[l-8:])
+	}
+}
+
+func (m *FileData) ShortString() string {
+	return fmt.Sprintf("from:%v length:%v block size:%v data:%v", m.GetFrom(), m.GetLength(), m.GetInBlocks(), shortString(m.GetData()))
+}
+
 func NewInnerHashes(height hashtree.Level, from hashtree.Nodes, length hashtree.Nodes, bytes []byte) InnerHashes {
 	h := int32(height)
 	f := int32(from)

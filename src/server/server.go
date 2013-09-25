@@ -101,7 +101,7 @@ func (s *Server) process(bp network.BitXPacket) {
 				}
 			}
 			for _, ds := range f.DataSend {
-				log.Printf("data send:%v", ds)
+				log.Printf("data send:%v", ds.ShortString())
 				number, comp, err := s.PutAt(ds.GetData(), *id, ds.GetFromB())
 				if err != nil {
 					log.Printf("err:%v", err)
