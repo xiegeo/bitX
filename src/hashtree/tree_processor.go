@@ -40,7 +40,7 @@ func (h *H256) toBytes() []byte {
 }
 
 type Level int
-type Bytes uint64
+type Bytes int64
 type Nodes int
 
 type HashTree interface {
