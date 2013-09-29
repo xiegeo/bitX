@@ -19,9 +19,10 @@ func init() {
 }
 
 type BitXConn struct {
-	conn    *net.UDPConn
-	on      bool
-	Receive <-chan BitXPacket
+	conn     *net.UDPConn
+	on       bool
+	Receive  <-chan BitXPacket
+	listener PacketListener
 }
 
 type BitXPacket struct {
@@ -39,7 +40,7 @@ func ListenUDP(ip string, port int) (*BitXConn, error) {
 	if errListen != nil {
 		return nil, errListen
 	}
-	return &BitXConn{conn: pudp, on: false}, nil
+	return &BitXConn{conn: pudp, on: false, listener: newPacketListener()}, nil
 }
 
 func (b *BitXConn) StartServerLoop() bool {
@@ -67,12 +68,19 @@ func (b *BitXConn) StartServerLoop() bool {
 				log.Println("error Unmarshal:", err)
 				continue
 			}
-			receive <- BitXPacket{addr, p}
+			bp := BitXPacket{addr, p}
+			b.listener.receive <- bp
+			receive <- bp
 		}
 		close(receive)
 	}()
 	return true
 }
+
+func (b *BitXConn) GetListener() *PacketListener {
+	return &b.listener
+}
+
 func (b *BitXConn) Close() error {
 	b.on = false
 	err := b.conn.Close()

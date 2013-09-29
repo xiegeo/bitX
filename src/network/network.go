@@ -49,6 +49,9 @@ func (m *FileData) GetFromB() hashtree.Bytes {
 }
 
 func (m *FileData) GetLengthB() hashtree.Bytes {
+	if m.GetLength() == 0 {
+		return hashtree.Bytes(len(m.GetData()))
+	}
 	return hashtree.Bytes(m.GetLength())
 }
 
@@ -82,8 +85,16 @@ func NewInnerHashes(height hashtree.Level, from hashtree.Nodes, length hashtree.
 func (in *InnerHashes) GetHeightL() hashtree.Level {
 	return hashtree.Level(in.GetHeight())
 }
+
 func (in *InnerHashes) GetLengthN() hashtree.Nodes {
 	return hashtree.Nodes(in.GetLength())
+}
+
+func (in *InnerHashes) GetLengthB() hashtree.Bytes {
+	if in.GetLengthN() == 0 {
+		return hashtree.Bytes(len(in.GetHashes()))
+	}
+	return hashtree.Bytes(in.GetLengthN() * hashtree.HASH_BYTES)
 }
 
 func (in *InnerHashes) GetFromN() hashtree.Nodes {

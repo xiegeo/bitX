@@ -5,6 +5,33 @@ import (
 	"code.google.com/p/goprotobuf/proto"
 )
 
+func (p *Packet) RequestedPayLoadSize() hashtree.Bytes {
+	size := hashtree.Bytes(0)
+	for _, v := range p.GetFiles() {
+		size += v.RequestedPayLoadSize()
+	}
+	return size
+}
+
+func (f *File) RequestedPayLoadSize() hashtree.Bytes {
+	size := hashtree.Bytes(0)
+	for _, v := range f.GetHashAsk() {
+		size += v.RequestedPayLoadSize()
+	}
+	for _, v := range f.GetDataAsk() {
+		size += v.RequestedPayLoadSize()
+	}
+	return size
+}
+
+func (h *InnerHashes) RequestedPayLoadSize() hashtree.Bytes {
+	return h.GetLengthB()
+}
+
+func (d *FileData) RequestedPayLoadSize() hashtree.Bytes {
+	return d.GetLengthB()
+}
+
 func (p *Packet) IsEmpty() bool {
 	return p.Hello == nil && p.HelloRequest == nil && p.Retains == nil && p.Files == nil && p.Bebug == nil
 }
