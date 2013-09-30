@@ -20,7 +20,7 @@ type bitxUDPSource struct {
 	_requestSize hashtree.Bytes
 }
 
-func newUDPSource(conn *network.BitXConn, addr *net.UDPAddr) source {
+func newUDPSource(conn *network.BitXConn, addr *net.UDPAddr) Source {
 	u := &bitxUDPSource{addr: addr, conn: conn, c: make(chan *network.File)}
 	u.Reset()
 	go u.consume()
