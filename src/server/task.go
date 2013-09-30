@@ -24,7 +24,7 @@ type bitxUDPSource struct {
 	conn        *network.BitXConn
 	c           chan *network.File
 	requesting  []*network.File
-	requestSize hashtree.Bytes
+	_requestSize hashtree.Bytes
 }
 
 type downloadTask struct {
@@ -40,16 +40,29 @@ func newUDPSource(conn *network.BitXConn, addr *net.UDPAddr) source {
 }
 
 func (b *bitxUDPSource) RequestableSize() hashtree.Bytes {
-	return b.requestSize
+	return b.getRequestSize()
 }
 
 func (b *bitxUDPSource) AddRequest(file *network.File) {
 	size := file.RequestedPayLoadSize()
-	if b.requestSize < size {
-		panic(fmt.Errorf("to much requested %v < %v", b.requestSize, size))
+	if b.getRequestSize() < size {
+		panic(fmt.Errorf("to much requested %v < %v", b.getRequestSize(), size))
 	}
-	b.requestSize -= size
+	b.changeRequestSize(-size)
 	b.conn.GetListener().Add(file.GetId(), b.c)
+}
+
+func (b *bitxUDPSource) getRequestSize() hashtree.Bytes{
+	return b._requestSize
+}
+
+func (b *bitxUDPSource) changeRequestSize(delta hashtree.Bytes){
+	b._requestSize += delta
+	if b._requestSize < 0 {
+		b._requestSize = 0
+	} else if b._requestSize > UDP_START_REQUEST_SIZE{
+		b._requestSize = UDP_START_REQUEST_SIZE
+	}
 }
 
 func (b *bitxUDPSource) consume() {
@@ -63,10 +76,11 @@ func (b *bitxUDPSource) process(f *network.File) {
 }
 
 func (b *bitxUDPSource) RemoveRequest(f *network.File) {
-
+	//todo: should calculated how much data requested got
+	b.changeRequestSize(1024)
 }
 
 func (b *bitxUDPSource) Reset() {
 	b.requesting = nil
-	b.requestSize = UDP_START_REQUEST_SIZE
+	b._requestSize = UDP_START_REQUEST_SIZE
 }
