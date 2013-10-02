@@ -2,6 +2,7 @@ package bitset
 
 import (
 	"os"
+	"fmt"
 )
 
 const (
@@ -41,7 +42,8 @@ func NewFileBacked(f *os.File, capacity int) *FileBackedBitSet {
 	if err != nil {
 		panic(err)
 	}
-	size := int64(capacity+8-1) / 8
+	b := &FileBackedBitSet{c:capacity, changes: make(map[int]map[int]bool)}
+	size := b.FileByteLength()
 	fileSize := fi.Size()
 	if fileSize > size {
 		panic("unexpected: file to big") //f.Truncate(0)
@@ -52,7 +54,12 @@ func NewFileBacked(f *os.File, capacity int) *FileBackedBitSet {
 			panic(err)
 		}
 	}
-	return &FileBackedBitSet{f, capacity, make(map[int]map[int]bool)}
+	b.f = f
+	return b
+}
+
+func (b *FileBackedBitSet) FileByteLength() int64{
+	return int64(b.c+8-1) / 8
 }
 
 func (b *FileBackedBitSet) locateChange(key int) (bucket int, bit int) {
@@ -117,8 +124,12 @@ func (b *FileBackedBitSet) Close() {
 	b.c = -1
 }
 
+func (b *FileBackedBitSet) HaveChanges() bool {
+	return len(b.changes) > 0
+}
+
 func (b *FileBackedBitSet) Flush() {
-	if len(b.changes) == 0 {
+	if !b.HaveChanges() {
 		return
 	}
 	buffer := make([]byte, fileBlockSize)
@@ -150,4 +161,21 @@ func (b *FileBackedBitSet) Flush() {
 			}
 		}
 	}
+}
+
+func (b *FileBackedBitSet) ReadAt(buf []byte, off int64)  (n int, err error){
+	if b.HaveChanges() {
+		fmt.Println("warning: read will flush, please flush explicitly");
+		b.Flush()
+	}
+	return b.f.ReadAt(buf, off)
+}
+
+func (b *FileBackedBitSet) ExportBytes() []byte{
+	exp := make([]byte, b.FileByteLength())
+	_, err := b.ReadAt(exp, 0)
+	if err != nil {
+		panic(err)
+	}
+	return exp
 }

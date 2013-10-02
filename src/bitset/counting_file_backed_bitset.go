@@ -127,3 +127,11 @@ func (c *CountingFileBackedBitSet) Close() {
 	c.Flush()
 	c.FileBackedBitSet.Close()
 }
+
+func (c *CountingFileBackedBitSet)  DataByteLength() int64{
+	return int64(c.Capacity()+8-1) / 8
+}
+
+func (c *CountingFileBackedBitSet) ExportBytes() []byte{
+	return c.FileBackedBitSet.ExportBytes()[:c.DataByteLength()]
+}
