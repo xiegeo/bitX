@@ -43,10 +43,9 @@ type SimpleBitSet struct {
 }
 
 const (
-	// Compute the size _S of a Word in bytes.
 	_m    = ^Word(0)
 	_logS = _m>>8&1 + _m>>16&1 + _m>>32&1
-	_S    = 1 << _logS
+	_S    = 1 << _logS // word size in bytes
 
 	_W = _S << 3 // word size in bits
 )
@@ -66,6 +65,40 @@ func (s *SimpleBitSet) locate(key int) (bucket int, mask Word) {
 
 func NewSimple(capacity int) *SimpleBitSet {
 	return &SimpleBitSet{make([]Word, (capacity+_W-1)/_W), capacity}
+}
+
+func NewSimpleFromWords(capacity int, w []Word) *SimpleBitSet {
+	if len(w) != (capacity+_W-1)/_W {
+		panic("capacity and data length mismatch.")
+	}
+	return &SimpleBitSet{w, capacity}
+}
+
+func NewSimpleFromBytes(capacity int, d []byte) *SimpleBitSet {
+	return NewSimpleFromWords(capacity, BytesToWords(d))
+}
+
+func BytesToWords(buf []byte) (w []Word) {
+	//from math/big/nat.go -> setBytes
+	w = make([]Word, (len(buf)+_S-1)/_S)
+
+	k := 0
+	s := uint(0)
+	var d Word
+	for i := len(buf); i > 0; i-- {
+		d |= Word(buf[i-1]) << s
+		if s += 8; s == _S*8 {
+			w[k] = d
+			k++
+			s = 0
+			d = 0
+		}
+	}
+	if k < len(w) {
+		w[k] = d
+	}
+
+	return w
 }
 
 func (s *SimpleBitSet) Set(i int) {

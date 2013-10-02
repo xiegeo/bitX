@@ -128,10 +128,14 @@ func (c *CountingFileBackedBitSet) Close() {
 	c.FileBackedBitSet.Close()
 }
 
-func (c *CountingFileBackedBitSet)  DataByteLength() int64{
+func (c *CountingFileBackedBitSet) DataByteLength() int64 {
 	return int64(c.Capacity()+8-1) / 8
 }
 
-func (c *CountingFileBackedBitSet) ExportBytes() []byte{
+func (c *CountingFileBackedBitSet) ExportBytes() []byte {
 	return c.FileBackedBitSet.ExportBytes()[:c.DataByteLength()]
+}
+
+func (c *CountingFileBackedBitSet) ToSimple() *SimpleBitSet {
+	return NewSimpleFromBytes(c.Capacity(), c.ExportBytes())
 }
