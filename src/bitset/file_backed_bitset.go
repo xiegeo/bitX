@@ -1,8 +1,8 @@
 package bitset
 
 import (
-	"os"
 	"fmt"
+	"os"
 )
 
 const (
@@ -42,7 +42,7 @@ func NewFileBacked(f *os.File, capacity int) *FileBackedBitSet {
 	if err != nil {
 		panic(err)
 	}
-	b := &FileBackedBitSet{c:capacity, changes: make(map[int]map[int]bool)}
+	b := &FileBackedBitSet{c: capacity, changes: make(map[int]map[int]bool)}
 	size := b.FileByteLength()
 	fileSize := fi.Size()
 	if fileSize > size {
@@ -58,7 +58,7 @@ func NewFileBacked(f *os.File, capacity int) *FileBackedBitSet {
 	return b
 }
 
-func (b *FileBackedBitSet) FileByteLength() int64{
+func (b *FileBackedBitSet) FileByteLength() int64 {
 	return int64(b.c+8-1) / 8
 }
 
@@ -163,15 +163,15 @@ func (b *FileBackedBitSet) Flush() {
 	}
 }
 
-func (b *FileBackedBitSet) ReadAt(buf []byte, off int64)  (n int, err error){
+func (b *FileBackedBitSet) ReadAt(buf []byte, off int64) (n int, err error) {
 	if b.HaveChanges() {
-		fmt.Println("warning: read will flush, please flush explicitly");
+		fmt.Println("warning: read will flush, please flush explicitly")
 		b.Flush()
 	}
 	return b.f.ReadAt(buf, off)
 }
 
-func (b *FileBackedBitSet) ExportBytes() []byte{
+func (b *FileBackedBitSet) ExportBytes() []byte {
 	exp := make([]byte, b.FileByteLength())
 	_, err := b.ReadAt(exp, 0)
 	if err != nil {
