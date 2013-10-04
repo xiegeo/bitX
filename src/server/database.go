@@ -93,7 +93,7 @@ func (d *simpleDatabase) hashNumber(leafs hashtree.Nodes, l hashtree.Level, n ha
 	}
 	return int64(sum + n)
 }
-func (d *simpleDatabase) hashTopNumber(leafs hashtree.Nodes) int64 {
+func (d *simpleDatabase) hashTreeSize(leafs hashtree.Nodes) int64 {
 	sum := hashtree.Nodes(0)
 	l := hashtree.Levels(leafs)
 	for i := hashtree.Level(0); i < l; i++ {
@@ -306,7 +306,7 @@ func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHa
 		return 0, false, ERROR_NOT_PART
 	}
 	defer f.Close()
-	bits := bitset.OpenCountingFileBacked(d.haveHashNameForId(id), int(d.hashTopNumber(leafs)-1))
+	bits := bitset.OpenCountingFileBacked(d.haveHashNameForId(id), int(d.hashTreeSize(leafs)-1))
 	defer bits.Close()
 
 	writeHash := func(realL hashtree.Level, realN hashtree.Nodes, b []byte) {
@@ -365,6 +365,18 @@ func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHa
 		}
 	}
 	return hashtree.Nodes(bits.Count()), bits.Full(), nil
+}
+
+func (d *simpleDatabase) HaveInnerHashes(id network.StaticId) bitset.BitSet {
+	set := bitset.OpenCountingFileBacked(d.haveHashNameForId(id), int(d.hashTreeSize(id.Blocks())-1))
+	defer set.Close()
+	return set.ToSimple()
+}
+
+func (d *simpleDatabase) HaveDataParts(id network.StaticId) bitset.BitSet {
+	set := bitset.OpenCountingFileBacked(d.havePartNameForId(id), int(id.Blocks()))
+	defer set.Close()
+	return set.ToSimple()
 }
 
 func remove(filename string) {
