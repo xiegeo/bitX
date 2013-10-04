@@ -1,9 +1,9 @@
 package server
 
 import (
+	"../bitset"
 	"../hashtree"
 	"../network"
-	"../bitset"
 )
 
 type Source interface {
@@ -14,10 +14,18 @@ type Source interface {
 }
 
 type DownloadTask struct {
-	id      network.StaticId
-	sources []Source
-	requesting bitset.BitSet
+	id              network.StaticId
+	sources         []Source
+	hashCompleted   bool
+	requestedHashes bitset.BitSet
+	requestedData   bitset.BitSet
 }
 
-
-
+func newDownlaodTask(d Database, id network.StaticId, sources []Source) *DownloadTask {
+	return &DownloadTask{
+		id:            id,
+		sources:       sources,
+		hashCompleted: false,
+		//requested:
+	}
+}
