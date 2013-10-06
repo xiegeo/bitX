@@ -38,6 +38,8 @@ type Database interface {
 	StartPart(id network.StaticId) error
 	PutAt(b []byte, id network.StaticId, off hashtree.Bytes) (has hashtree.Nodes, complete bool, err error)
 	PutInnerHashes(id network.StaticId, set network.InnerHashes) (has hashtree.Nodes, complete bool, err error)
+	InnerHashesSet(id network.StaticId) bitset.BitSet
+	DataPartsSet(id network.StaticId) bitset.BitSet 
 	Remove(id network.StaticId)
 	Close()
 }
@@ -372,13 +374,13 @@ func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHa
 	return hashtree.Nodes(bits.Count()), bits.Full(), nil
 }
 
-func (d *simpleDatabase) HaveInnerHashes(id network.StaticId) bitset.BitSet {
+func (d *simpleDatabase) InnerHashesSet(id network.StaticId) bitset.BitSet {
 	set := bitset.OpenCountingFileBacked(d.haveHashNameForId(id), int(d.hashTreeSize(id.Blocks())-1))
 	defer set.Close()
 	return set.ToSimple()
 }
 
-func (d *simpleDatabase) HaveDataParts(id network.StaticId) bitset.BitSet {
+func (d *simpleDatabase) DataPartsSet(id network.StaticId) bitset.BitSet {
 	set := bitset.OpenCountingFileBacked(d.havePartNameForId(id), int(id.Blocks()))
 	defer set.Close()
 	return set.ToSimple()
