@@ -42,9 +42,9 @@ type Database interface {
 	Close()
 }
 
-func HaveAllInnerHashes(d Database, id network.StaticId) bool{
-	_, comp, _ := d.PutInnerHashes(id,network.InnerHashes{})
-	return comp;
+func HaveAllInnerHashes(d Database, id network.StaticId) bool {
+	_, comp, _ := d.PutInnerHashes(id, network.InnerHashes{})
+	return comp
 }
 
 func ImportLocalFile(d Database, location string) (id network.StaticId) {
