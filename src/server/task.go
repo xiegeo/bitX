@@ -17,6 +17,7 @@ type DownloadTask struct {
 	id            network.StaticId
 	sources       []Source
 	hashCompleted bool
+	complete      bool
 	hashesSet     bitset.BitSet
 	dataSet       bitset.BitSet
 }
@@ -47,8 +48,12 @@ func newDownlaodTask(d Database, id network.StaticId, sources []Source) *Downloa
 			t.dataSet = d.DataPartsSet(id)
 		}
 	case FILE_COMPLETE:
-		//...
+		t.complete = true
 	}
 
 	return t
+}
+
+type TaskManager struct {
+	tasks map[string]DownloadTask
 }
