@@ -39,7 +39,7 @@ type Database interface {
 	PutAt(b []byte, id network.StaticId, off hashtree.Bytes) (has hashtree.Nodes, complete bool, err error)
 	PutInnerHashes(id network.StaticId, set network.InnerHashes) (has hashtree.Nodes, complete bool, err error)
 	InnerHashesSet(id network.StaticId) bitset.BitSet
-	DataPartsSet(id network.StaticId) bitset.BitSet 
+	DataPartsSet(id network.StaticId) bitset.BitSet
 	Remove(id network.StaticId)
 	Close()
 }
