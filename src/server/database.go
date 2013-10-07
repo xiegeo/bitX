@@ -101,16 +101,11 @@ func (d *simpleDatabase) hashNumber(leafs hashtree.Nodes, l hashtree.Level, n ha
 	return int64(sum + n)
 }
 func (d *simpleDatabase) hashTreeSize(leafs hashtree.Nodes) int64 {
-	sum := hashtree.Nodes(0)
-	l := hashtree.Levels(leafs)
-	for i := hashtree.Level(0); i < l; i++ {
-		sum += refHash.LevelWidth(leafs, i)
-	}
-	return int64(sum)
+	return d.hashNumber(leafs, hashtree.Levels(leafs), 0)
 }
 
-func (d *simpleDatabase) hashPosition(leafs hashtree.Nodes, l hashtree.Level, n hashtree.Nodes) int64 {
-	return d.hashNumber(leafs, l, n) * int64(refHash.Size())
+func (d *simpleDatabase) hashPosition(leafs hashtree.Nodes, l hashtree.Level, n hashtree.Nodes) hashtree.Bytes {
+	return hashtree.Bytes(d.hashNumber(leafs, l, n)) * hashtree.Bytes(refHash.Size())
 }
 
 func (d *simpleDatabase) innerHashListenerFile(hasher hashtree.HashTree, len hashtree.Bytes) *os.File {
@@ -126,7 +121,7 @@ func (d *simpleDatabase) innerHashListenerFile(hasher hashtree.HashTree, len has
 			return //don't need the root here
 		}
 		b := h.ToBytes()
-		off := d.hashPosition(leafs, l, i)
+		off := int64(d.hashPosition(leafs, l, i))
 		if _, err := file.WriteAt(b, off); err != nil {
 			panic(err)
 		}
@@ -220,7 +215,7 @@ func (d *simpleDatabase) GetInnerHashes(id network.StaticId, req network.InnerHa
 		return req, ERROR_NOT_LOCAL
 	}
 	defer f.Close()
-	off := d.hashPosition(leafs, level, from)
+	off := int64(d.hashPosition(leafs, level, from))
 	b := make([]byte, refHash.Size()*int(nodes))
 	if _, err := f.ReadAt(b, off); err != nil {
 		panic(err)
@@ -317,7 +312,7 @@ func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHa
 	defer bits.Close()
 
 	writeHash := func(realL hashtree.Level, realN hashtree.Nodes, b []byte) {
-		off := d.hashPosition(leafs, realL, realN)
+		off := int64(d.hashPosition(leafs, realL, realN))
 		if _, err := f.WriteAt(b, off); err != nil {
 			panic(err)
 		}
@@ -339,7 +334,7 @@ func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHa
 		if key == bits.Capacity() {
 			copy(hashBuffer, id.GetHash())
 		} else {
-			off := d.hashPosition(leafs, rootL, rootN)
+			off := int64(d.hashPosition(leafs, rootL, rootN))
 			if _, err := f.ReadAt(hashBuffer, off); err != nil {
 				panic(err)
 			}
