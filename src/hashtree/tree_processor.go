@@ -103,17 +103,6 @@ func (d *treeDigest) Levels(n Nodes) Level {
 	return Levels(n)
 }
 
-func LevelWidth(n Nodes, l Level) Nodes {
-	if l < 0 {
-		return 0
-	}
-	for l > 0 {
-		n = (n + 1) / 2
-		l--
-	}
-	return n
-}
-
 func (d *treeDigest) LevelWidth(n Nodes, l Level) Nodes {
 	return LevelWidth(n, l)
 }
