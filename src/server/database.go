@@ -93,21 +93,6 @@ func (d *simpleDatabase) LowestInnerHashes() hashtree.Level {
 
 var refHash = hashtree.NewFile()
 
-func (d *simpleDatabase) hashNumber(leafs hashtree.Nodes, l hashtree.Level, n hashtree.Nodes) int64 {
-	sum := hashtree.Nodes(0)
-	for i := hashtree.Level(0); i < l; i++ {
-		sum += refHash.LevelWidth(leafs, i)
-	}
-	return int64(sum + n)
-}
-func (d *simpleDatabase) hashTreeSize(leafs hashtree.Nodes) int64 {
-	return d.hashNumber(leafs, hashtree.Levels(leafs), 0)
-}
-
-func (d *simpleDatabase) hashPosition(leafs hashtree.Nodes, l hashtree.Level, n hashtree.Nodes) hashtree.Bytes {
-	return hashtree.Bytes(d.hashNumber(leafs, l, n)) * hashtree.Bytes(refHash.Size())
-}
-
 func (d *simpleDatabase) innerHashListenerFile(hasher hashtree.HashTree, len hashtree.Bytes) *os.File {
 	leafs := hasher.Nodes(len)
 	top := hasher.Levels(leafs) - 1
@@ -121,7 +106,7 @@ func (d *simpleDatabase) innerHashListenerFile(hasher hashtree.HashTree, len has
 			return //don't need the root here
 		}
 		b := h.ToBytes()
-		off := int64(d.hashPosition(leafs, l, i))
+		off := int64(hashtree.HashPosition(leafs, l, i))
 		if _, err := file.WriteAt(b, off); err != nil {
 			panic(err)
 		}
@@ -215,7 +200,7 @@ func (d *simpleDatabase) GetInnerHashes(id network.StaticId, req network.InnerHa
 		return req, ERROR_NOT_LOCAL
 	}
 	defer f.Close()
-	off := int64(d.hashPosition(leafs, level, from))
+	off := int64(hashtree.HashPosition(leafs, level, from))
 	b := make([]byte, refHash.Size()*int(nodes))
 	if _, err := f.ReadAt(b, off); err != nil {
 		panic(err)
@@ -308,15 +293,15 @@ func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHa
 		return 0, false, ERROR_NOT_PART
 	}
 	defer f.Close()
-	bits := bitset.OpenCountingFileBacked(d.haveHashNameForId(id), int(d.hashTreeSize(leafs)-1))
+	bits := bitset.OpenCountingFileBacked(d.haveHashNameForId(id), int(hashtree.HashTreeSize(leafs)-1))
 	defer bits.Close()
 
 	writeHash := func(realL hashtree.Level, realN hashtree.Nodes, b []byte) {
-		off := int64(d.hashPosition(leafs, realL, realN))
+		off := int64(hashtree.HashPosition(leafs, realL, realN))
 		if _, err := f.WriteAt(b, off); err != nil {
 			panic(err)
 		}
-		n := int(d.hashNumber(leafs, realL, realN))
+		n := int(hashtree.HashNumber(leafs, realL, realN))
 		bits.Set(n)
 	}
 
@@ -324,7 +309,7 @@ func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHa
 	splited := set.SplitLocalSummable(&id)
 	for _, hashes := range splited {
 		rootL, rootN := hashes.LocalRoot(leafs)
-		key := int(d.hashNumber(leafs, rootL, rootN))
+		key := int(hashtree.HashNumber(leafs, rootL, rootN))
 		if key == bits.Capacity() {
 			//this is root
 		} else if !bits.Get(key) {
@@ -334,7 +319,7 @@ func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHa
 		if key == bits.Capacity() {
 			copy(hashBuffer, id.GetHash())
 		} else {
-			off := int64(d.hashPosition(leafs, rootL, rootN))
+			off := int64(hashtree.HashPosition(leafs, rootL, rootN))
 			if _, err := f.ReadAt(hashBuffer, off); err != nil {
 				panic(err)
 			}
@@ -370,7 +355,7 @@ func (d *simpleDatabase) PutInnerHashes(id network.StaticId, set network.InnerHa
 }
 
 func (d *simpleDatabase) InnerHashesSet(id network.StaticId) bitset.BitSet {
-	set := bitset.OpenCountingFileBacked(d.haveHashNameForId(id), int(d.hashTreeSize(id.Blocks())-1))
+	set := bitset.OpenCountingFileBacked(d.haveHashNameForId(id), int(hashtree.HashTreeSize(id.Blocks())-1))
 	defer set.Close()
 	return set.ToSimple()
 }
