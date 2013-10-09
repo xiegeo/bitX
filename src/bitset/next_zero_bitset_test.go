@@ -20,9 +20,9 @@ func TestRange(t *testing.T) {
 
 	for k, s := range rstarts {
 		l := rlengths[k]
-		index, length := n.NextRange(maxRange)
-		if s != index || l != length {
-			t.Errorf("expect:%v, %v got:%v, %v ", s, l, index, length)
+		start, length := n.NextRange(maxRange)
+		if s != start || l != length {
+			t.Errorf("expect:%v, %v got:%v, %v ", s, l, start, length)
 		}
 	}
 

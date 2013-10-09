@@ -24,14 +24,14 @@ func (n *NextZeroBitSet) Next() (index int, done bool) {
 
 // the next 0 bits, length is the number of consecutive 0s including the first,
 // done (see Next()) if length = 0
-func (n *NextZeroBitSet) NextRange(maxRange int) (index int, length int) {
-	index, done := n.Next()
+func (n *NextZeroBitSet) NextRange(maxRange int) (start int, length int) {
+	start, done := n.Next()
 	if done {
-		return index, 0
+		return start, 0
 	} else {
 		r := 1
 		i, d := n.Next()
-		for r < maxRange && i == index+r && !d {
+		for r < maxRange && i == start+r && !d {
 			r++
 			i, d = n.Next()
 		}
@@ -39,7 +39,7 @@ func (n *NextZeroBitSet) NextRange(maxRange int) (index int, length int) {
 			n.pos--
 		}
 
-		return index, r
+		return start, r
 	}
 
 }
