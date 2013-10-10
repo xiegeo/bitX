@@ -28,6 +28,10 @@ func TestServerDataProvider(t *testing.T) {
 
 	files := []network.StaticId{}
 
+	tm := NewTaskManager(s2)
+	go tm.runLoop()
+	sources := []Source{newUDPSource(conn, toAddr)}
+
 	for _, size := range fileSizes {
 		id := s1.ImportFromReader(&testFile{length: size})
 		files = append(files, id)
@@ -38,23 +42,11 @@ func TestServerDataProvider(t *testing.T) {
 			t.Fatalf("file of length %v not unknown", id.GetLength())
 		}
 
-		err := s2.StartPart(id)
-		if err != nil {
-			t.Fatalf("start part error:%v", err)
-		}
-
-		p := &network.Packet{}
-		p.FillHashRequest(id, 0, 0, hashtree.FileNodesDefault(size))
-		conn.Send(p, toAddr)
-
-		p = &network.Packet{}
-		p.FillDataRequest(id, 0, id.Bytes())
-		conn.Send(p, toAddr)
+		tm.AddDownload(id, sources)
 	}
-	for i := 0; i < 2; i++ {
-		for _, id := range files {
-			s2.WaitFor(id, FILE_COMPLETE, 1*time.Second)
-		}
+
+	for _, id := range files {
+		s2.WaitFor(id, FILE_COMPLETE, time.Second/10)
 	}
 
 	for _, id := range files {

@@ -3,7 +3,7 @@ package server
 import (
 	"../hashtree"
 	"../network"
-	"fmt"
+	//"fmt"
 	"net"
 )
 
@@ -28,20 +28,20 @@ func newUDPSource(conn *network.BitXConn, addr *net.UDPAddr) Source {
 }
 
 func (b *bitxUDPSource) RequestableSize() hashtree.Bytes {
-	return b.getRequestSize()
+	return b._requestSize
 }
 
-func (b *bitxUDPSource) AddRequest(file *network.File) {
-	size := file.RequestedPayLoadSize()
-	if b.getRequestSize() < size {
-		panic(fmt.Errorf("to much requested %v < %v", b.getRequestSize(), size))
+func (b *bitxUDPSource) AddRequest(p *network.Packet) {
+	size := p.RequestedPayLoadSize()
+	if b.RequestableSize() < size {
+		//todo turn back on after requests are sized
+		//panic(fmt.Errorf("too much requested, Allow:%v RequestedPayLoadSize:%v", b.RequestableSize(), size))
 	}
 	b.changeRequestSize(-size)
-	b.conn.GetListener().Add(file.GetId(), b.c)
-}
-
-func (b *bitxUDPSource) getRequestSize() hashtree.Bytes {
-	return b._requestSize
+	for _, file := range p.GetFiles() {
+		b.conn.GetListener().Add(file.GetId(), b.c)
+	}
+	b.conn.Send(p, b.addr)
 }
 
 func (b *bitxUDPSource) changeRequestSize(delta hashtree.Bytes) {
@@ -60,12 +60,18 @@ func (b *bitxUDPSource) consume() {
 }
 
 func (b *bitxUDPSource) process(f *network.File) {
-	b.RemoveRequest(f)
+	b.removeRequestFile(f)
 }
 
-func (b *bitxUDPSource) RemoveRequest(f *network.File) {
+func (b *bitxUDPSource) removeRequestFile(f *network.File) {
 	//todo: should calculated how much data requested got
 	b.changeRequestSize(1024)
+}
+
+func (b *bitxUDPSource) RemoveRequest(p *network.Packet) {
+	for _, file := range p.GetFiles() {
+		b.removeRequestFile(file)
+	}
 }
 
 func (b *bitxUDPSource) Reset() {
