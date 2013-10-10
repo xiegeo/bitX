@@ -34,6 +34,7 @@ func HashNumber(leafs Nodes, l Level, n Nodes) int64 {
 	}
 	return int64(sum + n)
 }
+
 func HashTreeSize(leafs Nodes) int64 {
 	return HashNumber(leafs, Levels(leafs), 0)
 }
