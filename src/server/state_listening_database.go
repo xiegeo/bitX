@@ -94,13 +94,14 @@ func (d *ListeningDatabase) WaitFor(id network.StaticId, toState FileState, time
 	if startState == toState {
 		return true, startState
 	}
+	timer := time.After(timeOut)
 	for true {
 		select {
 		case state := <-listener:
 			if state == toState {
 				return true, state
 			}
-		case <-time.After(timeOut):
+		case <-timer:
 			state := d.GetState(id)
 			return state == toState, state
 		}
