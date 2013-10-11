@@ -9,7 +9,14 @@ import (
 	"time"
 )
 
+func timeOutPanic() {
+	time.Sleep(10 * time.Second)
+	panic("timed out")
+}
+
 func TestServerDataProvider(t *testing.T) {
+
+	go timeOutPanic()
 
 	set1 := Setting{network.ServerHello{}, ".testServer1", "simple", 30011, "127.0.0.1"}
 	set2 := Setting{network.ServerHello{}, ".testServer2", "simple", 30012, "127.0.0.1"}
@@ -47,7 +54,7 @@ func TestServerDataProvider(t *testing.T) {
 	}
 
 	for _, id := range files {
-		s2.WaitFor(id, FILE_COMPLETE, time.Second/10)
+		s2.WaitFor(id, FILE_COMPLETE, time.Second/20)
 	}
 
 	for _, id := range files {
