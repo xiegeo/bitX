@@ -1,8 +1,8 @@
 package network
 
 import (
-"net"
-"math/rand"
+	"math/rand"
+	"net"
 )
 
 //simulate network conditions for testing by randomizing send
@@ -14,7 +14,7 @@ type ConnMonkey struct {
 func (m *ConnMonkey) Send(p *Packet, addr *net.UDPAddr) {
 	if rand.Float32() < m.LossChance {
 		log.Printf("Monkey losses Packet:%v\n", p)
-		return;
+		return
 	}
-	m.BitXConnecter.Send(p,addr)
+	m.BitXConnecter.Send(p, addr)
 }
