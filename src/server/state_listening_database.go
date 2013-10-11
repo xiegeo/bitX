@@ -21,6 +21,9 @@ func NewListeningDatabase(d Database) *ListeningDatabase {
 }
 
 func (d *ListeningDatabase) AddListener(id network.StaticId, listener chan FileState) {
+	if cap(listener) < 1 {
+		panic("listener must have a buffer")
+	}
 	sid := id.CompactId()
 	d.lock.Lock()
 	defer d.lock.Unlock()
@@ -58,7 +61,13 @@ func (d *ListeningDatabase) writeHappend(id network.StaticId) {
 		ls, ok := d.listeners[sid]
 		if ok {
 			for listener := range ls {
-				listener <- state
+				select {
+				//remove old stuff in listener, if any
+				case <-listener:
+					continue
+				default:
+					listener <- state
+				}
 			}
 		}
 	}
@@ -76,7 +85,7 @@ func (d *ListeningDatabase) ImportFromReader(r io.Reader) network.StaticId {
 }
 
 func (d *ListeningDatabase) WaitFor(id network.StaticId, toState FileState, timeOut time.Duration) (ok bool, curState FileState) {
-	listener := make(chan FileState)
+	listener := make(chan FileState, 1)
 	defer close(listener)
 	d.AddListener(id, listener)
 	defer d.RemoveListener(id, listener)
