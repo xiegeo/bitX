@@ -14,13 +14,13 @@ const (
 
 type bitxUDPSource struct {
 	addr         *net.UDPAddr
-	conn         *network.BitXConn
+	conn         network.BitXConnecter
 	c            chan *network.File
 	requesting   []*network.File
 	_requestSize hashtree.Bytes
 }
 
-func newUDPSource(conn *network.BitXConn, addr *net.UDPAddr) Source {
+func newUDPSource(conn network.BitXConnecter, addr *net.UDPAddr) Source {
 	u := &bitxUDPSource{addr: addr, conn: conn, c: make(chan *network.File)}
 	u.Reset()
 	go u.consume()

@@ -15,7 +15,7 @@ func init() {
 
 type Server struct {
 	setting Setting
-	conn    *network.BitXConn
+	conn    network.BitXConnecter
 	Database
 }
 

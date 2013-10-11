@@ -18,6 +18,13 @@ func init() {
 	log = logPkg.New(os.Stdout, "network:", logPkg.LstdFlags)
 }
 
+type BitXConnecter interface {
+	StartServerLoop() bool
+	GetListener() *PacketListener
+	Close() error
+	Send(p *Packet, addr *net.UDPAddr)
+}
+
 type BitXConn struct {
 	conn     *net.UDPConn
 	on       bool
@@ -90,10 +97,10 @@ func (b *BitXConn) Close() error {
 	return err
 }
 
-func (b *BitXConn) Send(p *Packet, addr *net.UDPAddr) (int, error) {
+func (b *BitXConn) Send(p *Packet, addr *net.UDPAddr) {
 	data, err := proto.Marshal(p)
 	if err != nil {
-		return 0, err
+		panic(err)
 	}
-	return b.conn.WriteToUDP(data, addr)
+	go b.conn.WriteToUDP(data, addr)
 }

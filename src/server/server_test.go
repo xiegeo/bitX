@@ -14,6 +14,7 @@ func TestServerDataProvider(t *testing.T) {
 	set1 := Setting{network.ServerHello{}, ".testServer1", "simple", 30011, "127.0.0.1"}
 	set2 := Setting{network.ServerHello{}, ".testServer2", "simple", 30012, "127.0.0.1"}
 	s1 := NewServer(set1)
+	s1.conn = &network.ConnMonkey{s1.conn,0.5}
 	s2 := NewServer(set2)
 
 	block := hashtree.Bytes(hashtree.FILE_BLOCK_SIZE)
