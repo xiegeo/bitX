@@ -8,8 +8,8 @@ import (
 )
 
 type Source interface {
-	RequestableSize() hashtree.Bytes
-	AddRequest(p *network.Packet)
+	RequestableSize(now time.Time) hashtree.Bytes
+	AddRequest(p *network.Packet, now time.Time)
 	RemoveRequest(p *network.Packet)
 	Reset()
 }
@@ -101,6 +101,7 @@ const MIN_REQUEST = 1024
 // - stageFull: all parts of all downloading files (currently downloadable) are requested
 // - maxAmount - requested < the smallest size requestable (MIN_REQUEST)
 func (tm *TaskManager) doRequest(maxAmount hashtree.Bytes) (requested hashtree.Bytes, sourcesFull bool, stageFull bool) {
+	now := time.Now()
 	reqLeft := maxAmount
 	stageFull = true
 	sourcesFull = true
@@ -110,7 +111,7 @@ func (tm *TaskManager) doRequest(maxAmount hashtree.Bytes) (requested hashtree.B
 			stageFull = false
 			break
 		}
-		r, s, a := t.doRequest(reqLeft)
+		r, s, a := t.doRequest(reqLeft, now)
 		reqLeft -= r
 		sourcesFull = sourcesFull && s
 		stageFull = stageFull && a
@@ -119,7 +120,7 @@ func (tm *TaskManager) doRequest(maxAmount hashtree.Bytes) (requested hashtree.B
 	return
 }
 
-func (t *DownloadTask) doRequest(maxAmount hashtree.Bytes) (requested hashtree.Bytes, sourcesFull bool, stageFull bool) {
+func (t *DownloadTask) doRequest(maxAmount hashtree.Bytes, now time.Time) (requested hashtree.Bytes, sourcesFull bool, stageFull bool) {
 	t.renewDatabase() //todo: update more efficiently
 	if t.complete {
 		return 0, false, true
@@ -133,7 +134,7 @@ func (t *DownloadTask) doRequest(maxAmount hashtree.Bytes) (requested hashtree.B
 			stageFull = false
 			break
 		}
-		size := s.RequestableSize()
+		size := s.RequestableSize(now)
 		reqableSize := size
 		if size < MIN_REQUEST {
 			continue
@@ -142,9 +143,9 @@ func (t *DownloadTask) doRequest(maxAmount hashtree.Bytes) (requested hashtree.B
 		}
 		p, full := t.getNextRequests(reqableSize)
 		qsize := p.RequestedPayLoadSize()
-		s.AddRequest(p)
+		s.AddRequest(p, now)
 		reqLeft -= qsize
-		sourcesFull = sourcesFull && (s.RequestableSize() < MIN_REQUEST)
+		sourcesFull = sourcesFull && (s.RequestableSize(now) < MIN_REQUEST)
 		if full {
 			stageFull = true
 			break

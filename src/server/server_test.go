@@ -54,7 +54,7 @@ func TestServerDataProvider(t *testing.T) {
 	}
 
 	for _, id := range files {
-		s2.WaitFor(id, FILE_COMPLETE, time.Second/20)
+		s2.WaitFor(id, FILE_COMPLETE, time.Second)
 	}
 
 	for _, id := range files {

@@ -5,18 +5,25 @@ import (
 	"../network"
 	//"fmt"
 	"net"
+	"time"
 )
 
 const (
-	UDP_START_REQUEST_SIZE = 1024 * 8
-	//TODO:  congestion control
+	UDP_START_REQUEST_SIZE  = 1024 * 8
+	UDP_REQUEST_LOST_FACTER = 5 // times more than expected
+	//TODO: more congestion control
 )
+
+type requestTracker struct {
+	file    *network.File
+	reqTime time.Time
+}
 
 type bitxUDPSource struct {
 	addr         *net.UDPAddr
 	conn         network.BitXConnecter
 	c            chan *network.File
-	requesting   []*network.File
+	requesting   []requestTracker
 	_requestSize hashtree.Bytes
 }
 
@@ -27,18 +34,34 @@ func newUDPSource(conn network.BitXConnecter, addr *net.UDPAddr) Source {
 	return u
 }
 
-func (b *bitxUDPSource) RequestableSize() hashtree.Bytes {
+func (b *bitxUDPSource) RequestableSize(now time.Time) hashtree.Bytes {
+	notOutDated := make([]requestTracker, len(b.requesting))
+	keep := now.Add(-UDP_REQUEST_LOST_FACTER * time.Second / 10) //todo: calculate expected time
+	for _, r := range b.requesting {
+		if r.reqTime.After(keep) {
+			notOutDated = append(notOutDated, r)
+		} else {
+			log.Printf("request timed out:%v", r)
+			b.changeRequestSize(r.file.RequestedPayLoadSize())
+		}
+	}
+	b.requesting = notOutDated
+	return b.requestableSize()
+}
+
+func (b *bitxUDPSource) requestableSize() hashtree.Bytes {
 	return b._requestSize
 }
 
-func (b *bitxUDPSource) AddRequest(p *network.Packet) {
+func (b *bitxUDPSource) AddRequest(p *network.Packet, now time.Time) {
 	size := p.RequestedPayLoadSize()
-	if b.RequestableSize() < size {
+	if b.requestableSize() < size {
 		//todo turn back on after requests are sized
-		//panic(fmt.Errorf("too much requested, Allow:%v RequestedPayLoadSize:%v", b.RequestableSize(), size))
+		//panic(fmt.Errorf("too much requested, Allow:%v RequestedPayLoadSize:%v", b.requestableSize(), size))
 	}
 	b.changeRequestSize(-size)
 	for _, file := range p.GetFiles() {
+		b.requesting = append(b.requesting, requestTracker{file, now})
 		b.conn.GetListener().Add(file.GetId(), b.c)
 	}
 	b.conn.Send(p, b.addr)
