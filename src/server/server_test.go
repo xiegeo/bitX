@@ -11,7 +11,7 @@ import (
 
 func timeOutPanic() {
 	time.Sleep(10 * time.Second)
-	panic("timed out")
+	panic("dead lock?")
 }
 
 func TestServerDataProvider(t *testing.T) {
