@@ -3,7 +3,6 @@ package server
 import (
 	"../hashtree"
 	"../network"
-	//"fmt"
 	"net"
 	"time"
 )
@@ -25,6 +24,7 @@ type bitxUDPSource struct {
 	c            chan *network.File
 	requesting   []requestTracker
 	_requestSize hashtree.Bytes
+	lastTick time.Time
 }
 
 func newUDPSource(conn network.BitXConnecter, addr *net.UDPAddr) Source {
@@ -35,17 +35,20 @@ func newUDPSource(conn network.BitXConnecter, addr *net.UDPAddr) Source {
 }
 
 func (b *bitxUDPSource) RequestableSize(now time.Time) hashtree.Bytes {
-	notOutDated := make([]requestTracker, len(b.requesting))
-	keep := now.Add(-UDP_REQUEST_LOST_FACTER * time.Second / 10) //todo: calculate expected time
-	for _, r := range b.requesting {
-		if r.reqTime.After(keep) {
-			notOutDated = append(notOutDated, r)
-		} else {
-			log.Printf("request timed out:%v", r)
-			b.changeRequestSize(r.file.RequestedPayLoadSize())
+	if b.lastTick.Before(now) {
+		b.lastTick = now
+		notOutDated := make([]requestTracker,0,len(b.requesting))
+		keep := now.Add(-UDP_REQUEST_LOST_FACTER * time.Second / 10) //todo: calculate expected time
+		for _, r := range b.requesting {
+			if r.reqTime.After(keep) {
+				notOutDated = append(notOutDated, r)
+			} else {
+				log.Printf("request timed out:%v", r)
+				b.changeRequestSize(r.file.RequestedPayLoadSize())
+			}
 		}
+		b.requesting = notOutDated
 	}
-	b.requesting = notOutDated
 	return b.requestableSize()
 }
 
@@ -55,9 +58,11 @@ func (b *bitxUDPSource) requestableSize() hashtree.Bytes {
 
 func (b *bitxUDPSource) AddRequest(p *network.Packet, now time.Time) {
 	size := p.RequestedPayLoadSize()
+	if size == 0{
+		log.Printf("Error: empty request:%v", p)
+	}
 	if b.requestableSize() < size {
-		//todo turn back on after requests are sized
-		//panic(fmt.Errorf("too much requested, Allow:%v RequestedPayLoadSize:%v", b.requestableSize(), size))
+		log.Printf("Error: too much requested, Allow:%v RequestedPayLoadSize:%v", b.requestableSize(), size)
 	}
 	b.changeRequestSize(-size)
 	for _, file := range p.GetFiles() {
