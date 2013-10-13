@@ -58,6 +58,9 @@ message Packet{
 	repeated Retains retains = 4;
 	repeated File files = 5;
 	
+	optional bytes request_id = 6; //replies should include this id in reply_ids
+	repeated bytes reply_ids = 7; //maybe the message is for many requests, also reply_id may repeate when many packates are need for one reply
+	
 	repeated string bebug = 900;
 }
 
