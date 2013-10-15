@@ -53,6 +53,10 @@ func TestServerDataProvider(t *testing.T) {
 		tm.AddDownload(id, sources)
 	}
 
+	for _, t := range tm.tasks {
+		t.stageFullWait = time.Second / 10 //make the test faster
+	}
+
 	for _, id := range files {
 		s2.WaitFor(id, FILE_COMPLETE, time.Second)
 	}

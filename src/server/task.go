@@ -22,14 +22,17 @@ type DownloadTask struct {
 	complete      bool
 	hashesSet     bitset.BitSet
 	dataSet       bitset.BitSet
+	stageFulled   *time.Time
+	stageFullWait time.Duration
 }
 
 func newDownlaodTask(d Database, id network.StaticId, sources []Source) *DownloadTask {
 
 	t := &DownloadTask{
-		d:       d,
-		id:      id,
-		sources: sources,
+		d:             d,
+		id:            id,
+		sources:       sources,
+		stageFullWait: time.Second,
 	}
 
 	t.renewDatabase()
@@ -121,7 +124,19 @@ func (tm *TaskManager) doRequest(maxAmount hashtree.Bytes) (requested hashtree.B
 }
 
 func (t *DownloadTask) doRequest(maxAmount hashtree.Bytes, now time.Time) (requested hashtree.Bytes, sourcesFull bool, stageFull bool) {
-	t.renewDatabase() //todo: update more efficiently
+	if t.stageFulled != nil {
+		if t.stageFulled.Add(t.stageFullWait).Before(now) {
+			// stage fulled for a long time
+			log.Printf("doRequest renewDatabase stage full timeout:%v", t.id)
+			t.stageFulled = nil
+			t.renewDatabase()
+		} else {
+			log.Printf("doRequest skip stage full:%v", t.id)
+			// currently full
+			return 0, false, true
+		}
+	}
+
 	if t.complete {
 		return 0, false, true
 	}
@@ -147,6 +162,7 @@ func (t *DownloadTask) doRequest(maxAmount hashtree.Bytes, now time.Time) (reque
 		reqLeft -= qsize
 		sourcesFull = sourcesFull && (s.RequestableSize(now) < MIN_REQUEST)
 		if full {
+			t.stageFulled = &now
 			stageFull = true
 			break
 		}
