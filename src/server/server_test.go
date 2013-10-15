@@ -47,9 +47,14 @@ func TestServerDataProvider(t *testing.T) {
 		s2.Remove(id)
 
 		if s2.GetState(id) != FILE_UNKNOW {
-			t.Fatalf("file of length %v not unknown", id.GetLength())
+			if size == 0 {
+				if s2.GetState(id) != FILE_COMPLETE {
+					t.Fatalf("the zero file should always be complete")
+				}
+			} else {
+				t.Fatalf("file of length %v not unknown", id.GetLength())
+			}
 		}
-
 		tm.AddDownload(id, sources)
 	}
 

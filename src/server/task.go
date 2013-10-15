@@ -158,8 +158,10 @@ func (t *DownloadTask) doRequest(maxAmount hashtree.Bytes, now time.Time) (reque
 		}
 		p, full := t.getNextRequests(reqableSize)
 		qsize := p.RequestedPayLoadSize()
-		s.AddRequest(p, now)
-		reqLeft -= qsize
+		if qsize > 0 {
+			s.AddRequest(p, now)
+			reqLeft -= qsize
+		}
 		sourcesFull = sourcesFull && (s.RequestableSize(now) < MIN_REQUEST)
 		if full {
 			t.stageFulled = &now

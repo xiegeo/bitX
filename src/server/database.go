@@ -75,6 +75,7 @@ func OpenSimpleDatabase(dirname string, lowestInnerHashes hashtree.Level) Databa
 		dirname:           dirname,
 		lowestInnerHashes: lowestInnerHashes,
 	}
+	d.ImportFromReader(&testFile{length: 0}) //build in the zero file
 	d.listener = NewListeningDatabase(d)
 	return d.listener
 }
@@ -374,6 +375,10 @@ func remove(filename string) {
 }
 
 func (d *simpleDatabase) Remove(id network.StaticId) {
+	if id.GetLength() == 0 {
+		log.Printf("can not remove the zero file")
+		return
+	}
 	remove(d.havePartNameForId(id))
 	remove(d.haveHashNameForId(id))
 	remove(d.partFileNameForId(id))
