@@ -22,7 +22,7 @@ type DownloadTask struct {
 	complete      bool
 	hashesSet     bitset.BitSet
 	dataSet       bitset.BitSet
-	stageFulled   *time.Time
+	stageFulled   *time.Time //nil means stage not full
 	stageFullWait time.Duration
 }
 
@@ -32,7 +32,7 @@ func newDownlaodTask(d Database, id network.StaticId, sources []Source) *Downloa
 		d:             d,
 		id:            id,
 		sources:       sources,
-		stageFullWait: time.Second,
+		stageFullWait: time.Second, //the default wait time on finish a stage before repeating requests.(todo: better end game)
 	}
 
 	t.renewDatabase()
