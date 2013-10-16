@@ -39,6 +39,9 @@ func TestServerDataProvider(t *testing.T) {
 	tm := NewTaskManager(s2)
 	go tm.runLoop()
 	sources := []Source{newUDPSource(conn, toAddr)}
+	for _, s := range sources {
+		log.Printf("source url: %v", s.GetUrl().String())
+	}
 
 	for _, size := range fileSizes {
 		id := s1.ImportFromReader(&testFile{length: size})
@@ -71,5 +74,4 @@ func TestServerDataProvider(t *testing.T) {
 			t.Fatalf("file of length %v not complete", id.GetLength())
 		}
 	}
-
 }
