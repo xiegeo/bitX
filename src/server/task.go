@@ -4,10 +4,12 @@ import (
 	"../bitset"
 	"../hashtree"
 	"../network"
+	"net/url"
 	"time"
 )
 
 type Source interface {
+	GetUrl() *url.URL //export the url
 	RequestableSize(now time.Time) hashtree.Bytes
 	AddRequest(p *network.Packet, now time.Time)
 	RemoveRequest(p *network.Packet)

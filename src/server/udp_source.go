@@ -4,6 +4,7 @@ import (
 	"../hashtree"
 	"../network"
 	"net"
+	"net/url"
 	"time"
 )
 
@@ -32,6 +33,11 @@ func newUDPSource(conn network.BitXConnecter, addr *net.UDPAddr) Source {
 	u.Reset()
 	go u.consume()
 	return u
+}
+
+func (b *bitxUDPSource) GetUrl() *url.URL {
+	return &url.URL{Scheme: "bitx",
+		Host: b.addr.String()}
 }
 
 func (b *bitxUDPSource) RequestableSize(now time.Time) hashtree.Bytes {
