@@ -14,6 +14,14 @@ const (
 	//TODO: more congestion control
 )
 
+type Source interface {
+	GetUrl() *url.URL //export the url
+	RequestableSize(now time.Time) hashtree.Bytes
+	AddRequest(p *network.Packet, now time.Time)
+	RemoveRequest(p *network.Packet)
+	Reset()
+}
+
 type requestTracker struct {
 	file    *network.File
 	reqTime time.Time
