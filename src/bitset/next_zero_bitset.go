@@ -13,7 +13,7 @@ func NewNextZeroBitSet(s *SimpleBitSet) *NextZeroBitSet {
 // the next 0 bit, indexed from 0 to cap-1, index is undefined if done
 func (n *NextZeroBitSet) Next() (index int, done bool) {
 	for ; n.pos < n.Capacity(); n.pos++ {
-		if n.Get(n.pos) {
+		if !n.Get(n.pos) {
 			n.pos++
 			return n.pos - 1, false
 		}
