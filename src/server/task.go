@@ -13,8 +13,8 @@ type DownloadTask struct {
 	sources       []Source
 	hashCompleted bool
 	complete      bool
-	hashesSet     bitset.BitSet
-	dataSet       bitset.BitSet
+	hashesSet     *bitset.NextZeroBitSet
+	dataSet       *bitset.NextZeroBitSet
 	stageFulled   *time.Time //nil means stage not full
 	stageFullWait time.Duration
 }
@@ -43,14 +43,14 @@ func (t *DownloadTask) renewDatabase() {
 			log.Printf("starting new DownloadTask err:%v", err)
 		}
 		t.hashCompleted = false
-		t.hashesSet = t.d.InnerHashesSet(t.id)
+		t.hashesSet = bitset.NewNextZeroBitSet(t.d.InnerHashesSet(t.id))
 	case FILE_PART:
 		if !HaveAllInnerHashes(t.d, t.id) {
 			t.hashCompleted = false
-			t.hashesSet = t.d.InnerHashesSet(t.id)
+			t.hashesSet = bitset.NewNextZeroBitSet(t.d.InnerHashesSet(t.id))
 		} else {
 			t.hashCompleted = true
-			t.dataSet = t.d.DataPartsSet(t.id)
+			t.dataSet = bitset.NewNextZeroBitSet(t.d.DataPartsSet(t.id))
 		}
 	case FILE_COMPLETE:
 		t.complete = true
@@ -111,8 +111,20 @@ func (t *DownloadTask) getNextRequests(maxAmount hashtree.Bytes) (p *network.Pac
 	p = &network.Packet{}
 	if !t.hashCompleted {
 		p.FillHashRequest(t.id, 0, 0, hashtree.FileNodesDefault(t.id.Bytes()))
+		return p, true
 	} else {
-		p.FillDataRequest(t.id, 0, t.id.Bytes())
+		s, l := t.dataSet.NextRange(int(maxAmount / hashtree.FILE_BLOCK_SIZE))
+		if l == 0 {
+			return p, true
+		} else if s+l < int(t.id.Blocks()) {
+			p.FillDataRequest(t.id, hashtree.Bytes(s*hashtree.FILE_BLOCK_SIZE), hashtree.Bytes(l*hashtree.FILE_BLOCK_SIZE))
+			return p, false
+		} else {
+			//requesting last block, which may not be full
+			byteLength := t.id.Bytes() - hashtree.Bytes(s*hashtree.FILE_BLOCK_SIZE)
+			p.FillDataRequest(t.id, hashtree.Bytes(s*hashtree.FILE_BLOCK_SIZE), byteLength)
+			return p, true
+		}
 	}
-	return p, true
+
 }
