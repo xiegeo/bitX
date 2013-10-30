@@ -13,7 +13,7 @@ type ConnMonkey struct {
 
 func (m *ConnMonkey) Send(p *Packet, addr *net.UDPAddr) {
 	if rand.Float32() < m.LossChance {
-		log.Printf("Monkey losses Packet:%v\n", p)
+		log.Printf("Monkey losses a packet\n")
 		return
 	}
 	m.BitXConnecter.Send(p, addr)
