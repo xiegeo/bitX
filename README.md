@@ -1,6 +1,8 @@
 BitX
 ========
-Status: Early development and design.
+Status: 
+
+BitX is now [FenSan](https://github.com/xiegeo/fensan). Everything here is for historical purposes. 
 
 Next Goal: A simple demo of a usable applications, probably file backup and sharing.
 
